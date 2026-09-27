@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mühürlü Davetiyeler</title>
+<meta name="description" content="Kabartmalı zarfı mühür kırılarak açılan, hikâyesi kaydırdıkça sahne sahne anlatılan hareketli dijital davetiyeler.">
+<meta name="theme-color" content="#120b14">
+<link rel="preload" href="yazitipleri/cinzel.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="yazitipleri/yazitipleri.css">
+<style>
+  :root {
+    color-scheme: dark;
+    --zemin: #120b14;
+    --yuzey: #1d1422;
+    --yuzey-2: #261a2c;
+    --murekkep: #efe6d4;
+    --soluk: #b3a58c;
+    --yaldiz: #d6ad5c;
+    --yaldiz-acik: #f3dca0;
+    --mum: #9e1b2c;
+    --cizgi: rgba(214, 173, 92, .28);
+    --f-baslik: 'Cinzel', 'Times New Roman', serif;
+    --f-metin: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --f-el: 'Pinyon Script', 'Snell Roundhand', cursive;
+  }
+  html { background: var(--zemin); }
+  body {
+    margin: 0; background: var(--zemin); color: var(--murekkep);
+    font-family: var(--f-metin); font-size: 19px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; padding-inline: 18px;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(158, 27, 44, .22), transparent 70%),
+      radial-gradient(ellipse 60% 30% at 80% 60%, rgba(60, 50, 140, .16), transparent 70%);
+    background-repeat: no-repeat;
+  }
+  .sayfa { max-width: 1080px; margin: 0 auto; padding-block: 56px 72px; display: grid; gap: 72px; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--yaldiz-acik); outline-offset: 3px; }
+
+  /* ---- açılış */
+  .tez { display: grid; gap: 18px; max-width: 780px; }
+  .tez h1 {
+    margin: 0; font-family: var(--f-baslik); font-weight: 600; font-size: clamp(34px, 6.4vw, 64px); line-height: 1.08;
+    letter-spacing: .01em; text-wrap: balance;
+  }
+  .tez h1 em { font-family: var(--f-el); font-style: normal; font-weight: 400; color: var(--yaldiz-acik); font-size: 1.25em; line-height: .8; }
+  .tez p { margin: 0; color: var(--soluk); font-size: 21px; max-width: 46ch; }
+
+  /* ---- tema levhaları */
+  .levhalar { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+  .levha {
+    display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr); gap: 22px; align-items: start;
+    padding: 22px; background: linear-gradient(160deg, var(--yuzey-2), var(--yuzey)); border: 1px solid var(--cizgi);
+  }
+  .telefon {
+    position: relative; aspect-ratio: 9 / 18; border-radius: 26px; overflow: hidden; background: #000;
+    box-shadow: 0 0 0 2px #3a2c40, 0 0 0 6px #0b070d, 0 18px 40px rgba(0, 0, 0, .55);
+  }
+  .telefon img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
+  .levha:hover .telefon img { transform: scale(1.05); }
+  .telefon::after { content: ''; position: absolute; left: 50%; top: 8px; width: 34%; height: 10px; margin-left: -17%; border-radius: 8px; background: #0b070d; }
+  .levha-yazi { display: grid; gap: 10px; min-width: 0; }
+  .levha-ust { font-family: var(--f-baslik); font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--yaldiz); }
+  .levha h2 { margin: 0; font-family: var(--f-baslik); font-weight: 600; font-size: 28px; line-height: 1.1; text-wrap: balance; }
+  .levha > .levha-yazi > p { margin: 0; color: var(--soluk); }
+  .akis { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: sahne; display: grid; gap: 3px; font-size: 17px; }
+  .akis li { counter-increment: sahne; display: grid; grid-template-columns: 26px 1fr; gap: 6px; }
+  .akis li::before { content: counter(sahne); font-family: var(--f-baslik); font-size: 12px; color: var(--yaldiz); padding-top: 4px; font-variant-numeric: tabular-nums; }
+  .eylemler { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .dugme {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; text-decoration: none;
+    font-family: var(--f-baslik); font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+    border: 1px solid var(--yaldiz); color: var(--yaldiz-acik); background: transparent; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .dugme:hover { background: rgba(214, 173, 92, .12); }
+  .dugme.muhur { border-color: #c23a4a; background: radial-gradient(circle at 35% 30%, #c8303f, var(--mum) 60%, #5c0c16); color: #fbe7c4; }
+  .dugme.muhur:hover { filter: brightness(1.1); }
+  .dugme svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+  /* ---- her davetiyede */
+  .bolum { display: grid; gap: 22px; }
+  .bolum > h2 { margin: 0; font-family: var(--f-baslik); font-weight: 600; font-size: 24px; letter-spacing: .06em; }
+  .ozellikler { display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); border-top: 1px solid var(--cizgi); margin: 0; }
+  .ozellikler div { padding: 16px 18px 18px 0; border-bottom: 1px solid var(--cizgi); display: grid; gap: 4px; align-content: start; }
+  .ozellikler dt { font-family: var(--f-baslik); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--yaldiz-acik); }
+  .ozellikler dd { margin: 0; color: var(--soluk); font-size: 18px; }
+  .ozellikler code { font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: .82em; color: var(--murekkep); background: rgba(255, 255, 255, .06); padding: 1px 5px; }
+
+  /* ---- kişiye özel bağlantı */
+  .arac { display: grid; gap: 14px; padding: 22px; border: 1px solid var(--cizgi); background: var(--yuzey); max-width: 720px; }
+  .arac p { margin: 0; color: var(--soluk); }
+  .alan { display: grid; gap: 6px; }
+  .alan label { font-family: var(--f-baslik); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--yaldiz); }
+  .alan input {
+    font: inherit; font-size: 18px; color: var(--murekkep); background: var(--zemin); border: 1px solid var(--cizgi);
+    padding: 10px 12px; min-width: 0; width: 100%; box-sizing: border-box;
+  }
+  .alan input:focus { outline: none; border-color: var(--yaldiz); }
+  .sonuc { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+  .sonuc output {
+    flex: 1 1 260px; min-width: 0; padding: 10px 12px; background: var(--zemin); border: 1px dashed var(--cizgi);
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; user-select: all;
+  }
+  .kopyalandi { color: var(--yaldiz-acik); font-size: 16px; min-height: 1.4em; margin: 0; }
+
+  footer { color: var(--soluk); font-size: 16px; border-top: 1px solid var(--cizgi); padding-top: 18px; display: grid; gap: 6px; }
+
+  @media (max-width: 520px) {
+    body { font-size: 18px; }
+    /* mobilde kapak + başlık yan yana, sahne listesi ve düğmeler tam genişlik */
+    .levha { grid-template-columns: minmax(0, 118px) minmax(0, 1fr); column-gap: 16px; row-gap: 8px; padding: 16px; }
+    .levha-yazi { display: contents; }
+    .levha > .telefon { grid-column: 1; grid-row: 1 / span 3; }
+    .levha-ust, .levha h2, .levha-yazi > p { grid-column: 2; }
+    .levha-ust { grid-row: 1; align-self: end; }
+    .levha h2 { grid-row: 2; font-size: 23px; }
+    .levha-yazi > p { grid-row: 3; align-self: start; font-size: 17px; }
+    .akis, .eylemler { grid-column: 1 / -1; }
+    .akis { font-size: 17px; margin-top: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .telefon img { transition: none; } }
+</style>
+</head>
+<body>
+<main class="sayfa">
+  <header class="tez">
+    <h1>Mührü kırın, <em>hikâye</em> başlasın.</h1>
+    <p>Kabartmalı zarfın üzerinde ışık parmağınızla gezinir; mühür kırılınca kapak açılır, kamera zarfın içine dalar ve davetiye kaydırdıkça sahne sahne anlatılır. Telefonda dikey, tam ekran.</p>
+  </header>
+
+  <section class="levhalar" aria-label="Temalar">
+    <article class="levha">
+      <a class="telefon" href="dugun-barok.html" aria-label="Barok düğün davetiyesini aç"><img src="temalar/barok/gorsel/kapak.webp" alt="Mum mühürlü, yaldız kabartmalı ve freskli barok zarf" width="720" height="1440"></a>
+      <div class="levha-yazi">
+        <span class="levha-ust">Düğün · Barok</span>
+        <h2>Saray Salonu</h2>
+        <p>Fildişi kağıtta yaldız gloria, alçı bulutlar ve güvercinli fresk. Kanon, klavsenle çalar.</p>
+        <ol class="akis">
+          <li>Kadife perde aralanır, isimler sahneye iner</li>
+          <li>Kubbenin freskli göğüne uçuş</li>
+          <li>Yaldız çerçeveli tablolarda ilk günler</li>
+          <li>Parşömen açılır, mühür basılır</li>
+          <li>Altın madalyon ve geri sayım</li>
+          <li>Sarmaşık programı, saray çizimi, yol tarifi</li>
+          <li>Katılım mektubu ve gül yaprakları</li>
+        </ol>
+        <div class="eylemler">
+          <a class="dugme muhur" href="dugun-barok.html">Canlı önizleme</a>
+          <a class="dugme" href="dugun-barok.html#hikaye">Zarfı atla</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="levha">
+      <a class="telefon" href="dogum-gunu-gotik.html" aria-label="Gotik doğum günü davetiyesini aç"><img src="temalar/gotik/gorsel/kapak.webp" alt="Gece mavisi, yaldız yıldızlı ve vitray gül pencereli gotik zarf" width="720" height="1440"></a>
+      <div class="levha-yazi">
+        <span class="levha-ust">Doğum günü · Gotik</span>
+        <h2>Gece Katedrali</h2>
+        <p>Sainte-Chapelle tavanı gibi yıldızlı gece mavisi, dilimli sivri kemer ve ışıldayan vitray. Müzik kutusu çalar.</p>
+        <ol class="akis">
+          <li>Portalın ahşap kapıları açılır</li>
+          <li>Mum ışıklı nefte uçuş, gül pencerede yaş</li>
+          <li>Her yıl bir vitray: kaydırdıkça yanar</li>
+          <li>Tüy kalemle yazılan el yazması</li>
+          <li>Astronomik saat tarihe kilitlenir</li>
+          <li>Program mumları tek tek tutuşur</li>
+          <li>Pastanın mumlarını üfleyin</li>
+        </ol>
+        <div class="eylemler">
+          <a class="dugme muhur" href="dogum-gunu-gotik.html">Canlı önizleme</a>
+          <a class="dugme" href="dogum-gunu-gotik.html#hikaye">Zarfı atla</a>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="bolum" aria-labelledby="ozellik-baslik">
+    <h2 id="ozellik-baslik">Her davetiyede</h2>
+    <dl class="ozellikler">
+      <div><dt>Işığı takip eden kabartma</dt><dd>Zarf WebGL ile çizilir; ışık dokunuşu ve telefonun eğimini izler, yaldız parlar, vitray arkadan aydınlanır.</dd></div>
+      <div><dt>Kişiye özel bağlantı</dt><dd><code>?kisi=Ayşe Hanım</code> eklenince misafirin adı zarfın kurdelesinde ve LCV formunda görünür.</dd></div>
+      <div><dt>Katılım (LCV)</dt><dd>Yanıt WhatsApp mesajı olarak gelir ya da kendi sunucunuza, Google E-Tablolar'a JSON olarak gönderilir.</dd></div>
+      <div><dt>Geri sayım ve takvim</dt><dd>Saat etkinliğin saat diliminde gösterilir; Google Takvim ve .ics seçenekleri hazırdır.</dd></div>
+      <div><dt>Yol tarifi</dt><dd>Google, Apple ve Yandex Haritalar için tek dokunuşla rota.</dd></div>
+      <div><dt>Müzik ve sesler</dt><dd>Kamu malı eserlerin kodla sentezlenmiş düzenlemeleri; isterseniz kendi ses dosyanız.</dd></div>
+      <div><dt>Hafif ve mobil öncelikli</dt><dd>Bağımlılık yok, yazı tipleri gömülü, Türkçe karakterler eksiksiz. Hareket azaltma tercihine uyar.</dd></div>
+      <div><dt>Tek blokla düzenlenir</dt><dd>İsimler, tarih, mekan, hikâye ve program sayfadaki tek bir yapılandırma bloğundan gelir.</dd></div>
+    </dl>
+  </section>
+
+  <section class="bolum" aria-labelledby="baglanti-baslik">
+    <h2 id="baglanti-baslik">Misafire özel bağlantı</h2>
+    <form class="arac" id="baglanti-formu">
+      <p>Davetiyenin yayınlandığı adresi ve misafirin adını yazın; zarfta adıyla karşılanacağı bağlantı hazırlanır.</p>
+      <div class="alan">
+        <label for="adres">Davetiye adresi</label>
+        <input id="adres" type="url" inputmode="url" value="https://siteniz.com/davetiye/dugun-barok.html" autocomplete="off">
+      </div>
+      <div class="alan">
+        <label for="misafir">Misafirin adı</label>
+        <input id="misafir" type="text" value="Ayşe Hanım ve Ailesi" autocomplete="off">
+      </div>
+      <div class="sonuc">
+        <output id="baglanti" for="adres misafir"></output>
+        <button class="dugme" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Kopyala</button>
+      </div>
+      <p class="kopyalandi" id="kopya-durum" role="status"></p>
+    </form>
+  </section>
+
+  <footer>
+    <span>Zarf, fresk, vitray ve süslemeler kodla üretildi; kaynak betikler <code>araclar/</code> klasöründe.</span>
+    <span>Yazı tipleri SIL Open Font License ile dağıtılır. Demo bilgileri (isimler, mekanlar, telefon) kurgusaldır.</span>
+  </footer>
+</main>
+<script>
+  (function () {
+    var form = document.getElementById('baglanti-formu');
+    var adres = document.getElementById('adres');
+    var misafir = document.getElementById('misafir');
+    var cikti = document.getElementById('baglanti');
+    var durum = document.getElementById('kopya-durum');
+    function uret() {
+      var a = adres.value.trim() || 'https://siteniz.com/davetiye/dugun-barok.html';
+      var m = misafir.value.trim();
+      var temiz = a.split('#')[0].split('?')[0];
+      cikti.value = m ? temiz + '?kisi=' + encodeURIComponent(m).replace(/%20/g, '+') : temiz;
+      durum.textContent = '';
+    }
+    adres.addEventListener('input', uret);
+    misafir.addEventListener('input', uret);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var metin = cikti.value;
+      var bitti = function () { durum.textContent = 'Bağlantı kopyalandı.'; };
+      var sec = function () {
+        var r = document.createRange();
+        r.selectNodeContents(cikti);
+        var s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+        durum.textContent = 'Kopyalama izni yok; bağlantı seçildi, elle kopyalayabilirsiniz.';
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, sec);
+      else sec();
+    });
+    uret();
+  })();
+</script>
+</body>
+</html>

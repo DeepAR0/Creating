@@ -206,7 +206,7 @@
           cfg.hikaye.map(function (b, i) {
             var renk = b.renk && VITRAYLAR.indexOf(b.renk) >= 0 ? b.renk : VITRAYLAR[i % VITRAYLAR.length];
             return '<article class="gv-pencere" data-renk="' + renk + '" style="--i:' + i + '">' +
-              '<div class="gv-cam"><img alt="" src="' + G + 'vitray-' + renk + '.webp">' +
+              '<div class="gv-cam"><img loading="lazy" decoding="async" alt="" src="' + G + 'vitray-' + renk + '.webp">' +
               '<div class="gv-simge">' + U.ikon(b.simge || ['yildiz', 'kitap', 'kalp', 'tac'][i % 4]) + '</div>' +
               '<div class="gv-parilti"></div></div>' +
               '<div class="gv-isik"></div>' +
@@ -276,7 +276,7 @@
         (wa ? '<a class="dugme lcv-gonder" href="#" target="_blank" rel="noopener">' + e(M.lcvGonder) + '</a>'
           : '<button class="dugme lcv-gonder" type="submit">' + e(M.lcvGonder) + '</button>') +
         '<p class="lcv-sonuc" role="status"></p>' +
-        '<div class="lcv-zarf" aria-hidden="true"><div class="lz-govde"></div><div class="lz-kapak"></div><img alt="" src="' + G + 'muhur.webp"></div>' +
+        '<div class="lcv-zarf" aria-hidden="true"><div class="lz-govde"></div><div class="lz-kapak"></div><img loading="lazy" decoding="async" alt="" src="' + G + 'muhur.webp"></div>' +
         '</form></div></section>');
 
       /* 8. kapanış: pasta */

@@ -186,7 +186,7 @@
             return '<figure class="g-tablo" data-i="' + i + '">' +
               '<div class="g-asili"><div class="g-kordon"></div>' +
               '<div class="g-cerceve"><div class="g-resim" style="background-image:url(\'' + e(resim) + '\')"></div>' +
-              '<img alt="" class="g-cerceve-img" src="' + G + 'cerceve.webp"><div class="g-parilti"></div></div></div>' +
+              '<img loading="lazy" decoding="async" alt="" class="g-cerceve-img" src="' + G + 'cerceve.webp"><div class="g-parilti"></div></div></div>' +
               '<figcaption class="g-levha"><b>' + e(b.yil || '') + '</b><strong>' + e(b.baslik || '') + '</strong>' +
               '<p>' + e(b.metin || '') + '</p></figcaption>' +
               '</figure>';
@@ -209,7 +209,7 @@
         '<p class="d-satir d-isim">' + e(cfg.damat.ad) + '</p>' +
         '<p class="d-satir d-susleme" aria-hidden="true">❦</p>' +
         '<p class="d-satir d-metin">' + e(cfg.davetMetni || '') + '</p>' +
-        '<div class="d-satir d-muhur"><img alt="" src="' + G + 'muhur.webp"><span>' + e(cfg.monogram || '') + '</span></div>' +
+        '<div class="d-satir d-muhur"><img loading="lazy" decoding="async" alt="" src="' + G + 'muhur.webp"><span>' + e(cfg.monogram || '') + '</span></div>' +
         '</div></div>' +
         '<div class="d-cubuk d-ust"><i></i><i></i></div><div class="d-cubuk d-alt"><i></i><i></i></div>' +
         '</div></div></section>');
@@ -219,10 +219,10 @@
         h.push('<section class="sahne s-tarih" data-boy="2.4" aria-label="Tarih">' +
           '<div class="sahne-sabit"><div class="t-isinlar"></div><div class="t-hale"></div>' +
           '<div class="t-ust">' + e(U.buyuk(M.tarihBaslik || 'Büyük Gün')) + '</div>' +
-          '<div class="t-madalyon"><div class="t-yuz t-on"><img alt="" src="' + G + 'madalyon.webp">' +
+          '<div class="t-madalyon"><div class="t-yuz t-on"><img loading="lazy" decoding="async" alt="" src="' + G + 'madalyon.webp">' +
           '<div class="t-yazi"><span class="t-gun">' + t.gun + '</span><span class="t-ay">' + e(U.buyuk(t.ay)) + '</span>' +
           '<span class="t-yil">' + t.yil + '</span></div></div>' +
-          '<div class="t-yuz t-arka"><img alt="" src="' + G + 'madalyon.webp"><div class="t-yazi"><span class="t-mono">' + e(cfg.monogram || '') + '</span></div></div></div>' +
+          '<div class="t-yuz t-arka"><img loading="lazy" decoding="async" alt="" src="' + G + 'madalyon.webp"><div class="t-yazi"><span class="t-mono">' + e(cfg.monogram || '') + '</span></div></div></div>' +
           '<div class="t-alt"><div class="t-hafta">' + e(t.haftaGunu) + ' · ' + e(M.saatOnEk || 'Saat') + ' ' + t.saat + '</div>' +
           '<div class="geri-sayim"></div><div class="t-dugmeler"></div></div>' +
           '</div></section>');
@@ -273,18 +273,18 @@
         (wa ? '<a class="dugme lcv-gonder" href="#" target="_blank" rel="noopener">' + e(M.lcvGonder) + '</a>'
           : '<button class="dugme lcv-gonder" type="submit">' + e(M.lcvGonder) + '</button>') +
         '<p class="lcv-sonuc" role="status"></p>' +
-        '<div class="lcv-zarf" aria-hidden="true"><div class="lz-govde"></div><div class="lz-kapak"></div><img alt="" src="' + G + 'muhur.webp"></div>' +
+        '<div class="lcv-zarf" aria-hidden="true"><div class="lz-govde"></div><div class="lz-kapak"></div><img loading="lazy" decoding="async" alt="" src="' + G + 'muhur.webp"></div>' +
         '</form></div></section>');
 
       /* 8. kapanış */
       h.push('<section class="sahne s-kapanis" data-boy="2.4" aria-label="Kapanış">' +
         '<div class="sahne-sabit"><canvas class="kp-yapraklar" aria-hidden="true"></canvas>' +
-        '<div class="kp-icerik"><div class="kp-celenk"><img alt="" src="' + G + 'madalyon.webp"><span>' + e(cfg.monogram || '') + '</span></div>' +
+        '<div class="kp-icerik"><div class="kp-celenk"><img loading="lazy" decoding="async" alt="" src="' + G + 'madalyon.webp"><span>' + e(cfg.monogram || '') + '</span></div>' +
         '<p class="kp-metin">' + e(cfg.kapanis || '') + '</p>' +
         '<div class="kp-isimler">' + e(cfg.gelin.ad) + ' <span>&amp;</span> ' + e(cfg.damat.ad) + '</div>' +
         '<button type="button" class="dugme ikincil kp-basa">' + e(M.basaDon) + '</button></div>' +
-        '<div class="p-panel p-sol kp-perde"><img alt="" src="' + G + 'perde-sol.webp"></div>' +
-        '<div class="p-panel p-sag kp-perde"><img alt="" src="' + G + 'perde-sag.webp"></div>' +
+        '<div class="p-panel p-sol kp-perde"><img loading="lazy" decoding="async" alt="" src="' + G + 'perde-sol.webp"></div>' +
+        '<div class="p-panel p-sag kp-perde"><img loading="lazy" decoding="async" alt="" src="' + G + 'perde-sag.webp"></div>' +
         '<div class="kp-son">' + e(M.son || 'Görüşmek üzere') + '</div>' +
         '</div></section>');
 

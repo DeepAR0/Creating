@@ -445,8 +445,10 @@
       e.preventDefault();
       var v = veri();
       if (!v.ad) { ad.focus(); ad.classList.add('hata'); return; }
+      // Gövde JSON'dur ama 'text/plain' gönderilir: CORS ön kontrolü (OPTIONS) gerekmez,
+      // Google Apps Script gibi uç noktalar doğrudan kabul eder (bkz. README).
       var is = cfg.lcv.endpoint ? fetch(cfg.lcv.endpoint, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(v)
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(v)
       }).catch(function () { /* ağ hatası: yine de yerelde kaydet */ }) : Promise.resolve();
       if (animasyon) animasyon(v);
       is.then(function () { tamam(v); });
@@ -455,11 +457,20 @@
   };
 
   D.paylas = function (cfg) {
-    var url = location.href.split('?')[0];
+    var url = location.href.split('?')[0].split('#')[0];
     var veri = { title: document.title, text: cfg.paylasimMetni || document.title, url: url };
-    if (navigator.share) return navigator.share(veri).catch(function () { /* iptal */ });
-    if (navigator.clipboard) return navigator.clipboard.writeText(url).then(function () { D.bildirim('Bağlantı kopyalandı'); });
-    window.prompt('Bağlantı:', url);
+    function kopyala() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(url).then(function () { D.bildirim('Bağlantı kopyalandı'); },
+          function () { D.bildirim(url); });
+      }
+      D.bildirim(url);
+    }
+    // paylaşım menüsü yoksa ya da tarayıcı reddederse bağlantıyı kopyala (kullanıcı iptali hariç)
+    if (navigator.share) {
+      return navigator.share(veri).catch(function (h) { if (!h || h.name !== 'AbortError') kopyala(); });
+    }
+    return kopyala();
   };
 
   D.bildirim = function (metin) {
@@ -492,11 +503,18 @@
     var halka = yuk.querySelector('.yuk-dolu');
     function ilerleme(p) { halka.style.strokeDashoffset = (289 * (1 - p)).toFixed(1); }
 
-    // hikâye içeriği
+    // hikâye içeriği: zarf dokuları yüklendikten sonra kurulur (bant genişliği önce zarfa)
     var ana = U.el('main', 'hikaye');
     ana.id = 'hikaye';
-    ana.innerHTML = tema.hikaye(cfg, D);
     document.body.appendChild(ana);
+    var hikayeKuruldu = false;
+    function hikayeyiKur() {
+      if (hikayeKuruldu) return;
+      hikayeKuruldu = true;
+      ana.innerHTML = tema.hikaye(cfg, D);
+      if (tema.sahneler) tema.sahneler(cfg, D, ana);
+      S.gozlem(ana);
+    }
 
     // kalıcı arayüz: müzik, paylaş, ilerleme çizgisi
     var arayuz = U.el('div', 'arayuz',
@@ -524,11 +542,8 @@
       cizgi.style.transform = 'scaleX(' + (m > 0 ? window.scrollY / m : 0).toFixed(4) + ')';
     }, { passive: true });
 
-    // tema sahnelerini kaydet
-    if (tema.sahneler) tema.sahneler(cfg, D, ana);
-    S.gozlem(ana);
-
     function hikayeyiAc() {
+      hikayeyiKur();
       document.body.classList.remove('kilitli');
       document.body.classList.add('acildi');
       window.scrollTo(0, 0);
@@ -558,6 +573,7 @@
     ]).catch(function () { /* yok */ }) : Promise.resolve();
     Promise.all([zarf.kur(), fontlar]).then(function () {
       ilerleme(1);
+      setTimeout(hikayeyiKur, 400);
       setTimeout(function () {
         yuk.classList.add('bitti');
         zarf.kok.classList.add('zarf-gorun');
