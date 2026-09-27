@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+coverage/
+.vite/
+# iOS derlemeleri
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+xcuserdata/
+*.xcuserstate
+# ekran görüntüsü çıktıları (geçici)
+screenshots/tmp/

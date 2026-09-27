@@ -1,0 +1,41 @@
+{
+  "name": "aqua-haven",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Aqua Haven - Akvaryum simülasyon ve tycoon oyunu (iOS / Capacitor)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "balance": "tsx scripts/balance.ts",
+    "ios:sync": "npm run build && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios": "npm run ios:sync && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
+    "@fontsource-variable/baloo-2": "^5.3.0",
+    "@fontsource-variable/nunito": "^5.3.0",
+    "@revenuecat/purchases-capacitor": "^13.6.1",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@preact/preset-vite": "^2.10.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}
