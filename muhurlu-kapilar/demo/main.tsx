@@ -7,8 +7,16 @@ import '../example/davetiye/davetiye.css';
 import './demo.css';
 import { SealedDoor } from '@/app/davet/[token]/sealed-door';
 import { defaultAppearance } from '@/lib/invitation-appearance';
-import type { DoorTheme } from '@/lib/door-themes';
+import { doorThemes, type DoorConfig, type DoorTheme } from '@/lib/door-themes';
 import { App } from './App';
+
+// Önizleme bir alt dizinde yayınlanabilir: kökten verilen görsel yollarını
+// sayfanın bulunduğu yere göre çöz (Next.js projesinde bu gerekmez).
+const rebase = (path: string) => (path.startsWith('/') ? new URL(`.${path}`, document.baseURI).href : path);
+for (const door of Object.values(doorThemes) as DoorConfig[]) {
+  door.art = rebase(door.art);
+  if (door.mask) door.mask = rebase(door.mask);
+}
 
 const params = new URLSearchParams(location.search);
 const root = createRoot(document.getElementById('root')!);

@@ -94,7 +94,11 @@ function writeSettings(s: Settings, view: 'galeri' | 'kapi') {
     });
   const query = q.toString();
   const url = `${location.pathname}${query ? `?${query}` : ''}`;
-  history.replaceState(null, '', url);
+  try {
+    history.replaceState(null, '', url);
+  } catch {
+    // Korumalı çerçevede (ör. yerleştirilmiş önizleme) adres değiştirilemez; sorun değil.
+  }
 }
 
 const ritualNames: Record<string, string> = {
