@@ -181,7 +181,7 @@ export async function createDoorScene({
     .copy(lightColor)
     .lerp(new THREE.Color('#ffa21f'), 0.5)
     .multiplyScalar(finishKind === 'matte' ? 0.45 : 1);
-  relief.uGild.value = finishKind === 'matte' ? 0.95 : 0.35;
+  relief.uGild.value = finishKind === 'matte' ? 0.95 : 0.65;
   const face = leafMaterial(door, surface, maps, relief, environment);
   materials.push(face);
   const body = new THREE.MeshStandardMaterial({ color: door.paper, roughness: 0.85 });
@@ -536,9 +536,10 @@ export async function createDoorScene({
   function glint() {
     if (!waveDoor || opening || active || paused || reduceMotion.matches) return;
     glintTween?.kill();
+    // Karelere `dirty` yazılmaz: parıltı boyunca döngü saniyede 30 kare çizer.
     glintTween = gsap
       .timeline({
-        onUpdate: () => {
+        onComplete: () => {
           dirty = true;
         },
       })
@@ -572,7 +573,7 @@ export async function createDoorScene({
     tilted.y += (tilted.ty - tilted.y) * Math.min(1, dt * 6);
     const lx = -2.7 + pointer.x * 1.4 + tilted.x * 1.6 + sweep.value * 3;
     const ly = 4 + pointer.y * 1.2 + tilted.y * 1.4;
-    if (Math.abs(key.position.x - lx) + Math.abs(key.position.y - ly) > 0.002) dirty = true;
+    if (Math.abs(key.position.x - lx) + Math.abs(key.position.y - ly) > 0.004) dirty = true;
     key.position.set(lx, ly, 6);
     if (glass?.update(dt)) dirty = true;
     const glinting = Boolean(glintTween?.isActive());
@@ -603,11 +604,13 @@ export async function createDoorScene({
     pointer.y = -((event.clientY - rect.top) / Math.max(1, height) - 0.5) * 2;
     dirty = true;
   };
+  // Sensör titreşimi sürekli yeniden çizime yol açmasın: eğim adım adım okunur.
+  const step = (v: number) => Math.round(Math.max(-1, Math.min(1, v)) * 25) / 25;
   const onTilt = (event: DeviceOrientationEvent) => {
     if (paused || active || event.gamma == null || event.beta == null) return;
     tilted.live = true;
-    tilted.tx = Math.max(-1, Math.min(1, event.gamma / 28));
-    tilted.ty = Math.max(-1, Math.min(1, (event.beta - 50) / 28));
+    tilted.tx = step(event.gamma / 28);
+    tilted.ty = step((event.beta - 50) / 28);
   };
 
   function spawnCrumbs() {

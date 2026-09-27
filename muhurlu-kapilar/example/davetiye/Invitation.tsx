@@ -28,11 +28,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 function Countdown({ target, lang }: { target: string; lang: Lang }) {
   const c = invitationContent[lang];
-  const [now, setNow] = useState(() => Date.now());
+  // Sunucuda saat yok: sayaç yalnızca tarayıcıda başlar (hydration uyuşmazlığı olmaz).
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
+  if (now === null) return <div className="davetiye-countdown" aria-hidden="true" />;
   const diff = new Date(target).getTime() - now;
   if (diff <= 0) {
     const sameDay = diff > -24 * 3600 * 1000;

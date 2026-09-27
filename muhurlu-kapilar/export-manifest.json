@@ -1,9 +1,53 @@
 {
-  "name": "Fildişi Rölyef",
-  "slug": "rolyef",
+  "name": "Mühürlü Kapılar",
+  "version": "2.0.0",
+  "slug": "muhurlu-kapilar",
+  "basedOn": {
+    "name": "Fildişi Rölyef",
+    "slug": "rolyef",
+    "version": "1.0.0",
+    "exportedAt": "2026-09-27"
+  },
   "exportedAt": "2026-09-27",
   "source": "EVET Dijital Davet Atölyesi",
   "target": "mobile-first React experience",
+  "themes": [
+    {
+      "slug": "rolyef",
+      "name": "Fildişi Rölyef",
+      "ritual": "tap",
+      "surface": "image",
+      "storyTouch": "IvoryBloom",
+      "cover": "public/rolyef-door.webp"
+    },
+    {
+      "slug": "kakma",
+      "name": "Sedef Kakma",
+      "ritual": "key",
+      "surface": "procedural",
+      "storyTouch": "PearlStar",
+      "cover": "public/kakma-door.webp",
+      "isNew": true
+    },
+    {
+      "slug": "kisbahcesi",
+      "name": "Kış Bahçesi",
+      "ritual": "wipe",
+      "surface": "procedural",
+      "storyTouch": "FrostNote",
+      "cover": "public/kisbahcesi-door.webp",
+      "isNew": true
+    },
+    {
+      "slug": "pera",
+      "name": "Pera Deco",
+      "ritual": "slide",
+      "surface": "procedural",
+      "storyTouch": "ChampagneToast",
+      "cover": "public/pera-door.webp",
+      "isNew": true
+    }
+  ],
   "dependencies": {
     "gsap": "3.15.0",
     "react": "19.2.6",
@@ -14,11 +58,35 @@
     "public/rolyef-door.webp",
     "public/rolyef-scene.webp",
     "public/rolyef-relief-mask.png",
-    "preview/rolyef-light-study.webp"
+    "public/kakma-door.webp",
+    "public/kisbahcesi-door.webp",
+    "public/pera-door.webp",
+    "preview/rolyef-light-study.webp",
+    "preview/kapilar.webp",
+    "preview/acilis.webp",
+    "preview/davetiyeler.webp",
+    "preview/hikaye-dokunuslari.webp"
   ],
   "entryPoints": [
     "source/app/davet/[token]/sealed-door.tsx",
     "source/app/davet/[token]/three-door-scene.ts",
+    "source/app/davet/[token]/story-touch.tsx",
     "source/app/davet/[token]/ivory-experience.tsx"
-  ]
+  ],
+  "styles": [
+    "source/app/three-door.css",
+    "source/app/sealed-doors.css",
+    "source/app/ivory-experience.css",
+    "source/app/door-experiences.css"
+  ],
+  "examples": [
+    "example/FildisiRolyefOpening.tsx",
+    "example/KapiVeDavetiye.tsx",
+    "example/davetiye/Invitation.tsx"
+  ],
+  "demo": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "entry": "index.html"
+  }
 }
