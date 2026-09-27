@@ -1,0 +1,43 @@
+.door3d-world {
+  position: fixed;
+  inset: 0;
+  width: min(100%, 480px);
+  margin-inline: auto;
+  z-index: 119;
+  pointer-events: none;
+  background: transparent;
+}
+.door3d-world[data-open='true'] {
+  z-index: 0;
+}
+.door3d-canvas {
+  position: absolute;
+  inset: 0;
+}
+.door3d-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.door3d-world:is([data-fallback='true'], [data-loading='true']):not(
+    [data-open='true']
+  ) {
+  background: var(--door-art, url('/rolyef-door.webp')) center /
+    var(--door-bg-size, 100% 100%) no-repeat;
+}
+[data-hybrid-trial][data-garden-stage='opening'] .invite-hero-content {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* Close contact shadows keep the wax/metal attached to its own theme surface. */
+.envelope-seal {
+  filter: drop-shadow(0 1px 2px #17060955);
+}
+.garden-gate-initials,
+.garden-gate:hover .garden-gate-initials {
+  box-shadow:
+    0 1px 2px #543a2940,
+    inset 0 1px 2px #fff7db99;
+}

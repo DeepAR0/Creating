@@ -1,0 +1,269 @@
+/* Fildişi demo only. One mobile stage; artwork and its light mask never scale. */
+.ivory-opening {
+  position: fixed;
+  z-index: 110;
+  inset: 0;
+  width: min(100%, 480px);
+  margin-inline: auto;
+  overflow: hidden;
+  color: #58422d;
+  isolation: isolate;
+}
+.ivory-door-stage {
+  position: absolute;
+  inset: 0;
+  perspective: 1400px;
+}
+.ivory-door {
+  position: absolute;
+  inset-block: 0;
+  width: 50%;
+  background: url('/rolyef-door.webp') left center / 200% 100% no-repeat;
+  backface-visibility: hidden;
+  transform-origin: left center;
+  box-shadow: inset -1px 0 #755b3e55;
+}
+.ivory-door-left {
+  left: 0;
+}
+.ivory-door-right {
+  right: 0;
+  background-position: right center;
+  transform-origin: right center;
+}
+.ivory-inner-halo {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse, #fffdf2, #f6dfad55 50%, transparent 80%);
+  opacity: 0;
+  pointer-events: none;
+}
+.ivory-relief-light {
+  --wave-radius: 0px;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 43%,
+    transparent max(0px, calc(var(--wave-radius) - 90px)),
+    #ffbc4177 max(0px, calc(var(--wave-radius) - 48px)),
+    #fff4bd var(--wave-radius),
+    #f6ce76aa calc(var(--wave-radius) + 18px),
+    transparent calc(var(--wave-radius) + 55px)
+  );
+  mask: url('/rolyef-relief-mask.png') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 2px #ffe7a6);
+}
+.ivory-seal {
+  position: absolute;
+  top: 43%;
+  left: 50%;
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #624529;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.ivory-seal-core {
+  width: 76px;
+  height: 80px;
+  display: grid;
+  place-items: center;
+  padding: 9px;
+  border-radius: 49% 48% 51% 47%;
+  background: radial-gradient(circle at 30% 20%, #ffedc6, #c4a06a 58%, #795633);
+  box-shadow:
+    0 6px 13px #5a3b275c,
+    inset 0 2px 2px #fff4d6,
+    inset 0 -3px 6px #795733;
+  transition:
+    scale 160ms ease,
+    box-shadow 160ms ease;
+}
+.ivory-seal-core > span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid #8e693f99;
+  box-shadow:
+    inset 0 2px 3px #77512d44,
+    0 1px #ffeec6;
+  font-family: var(--font-serif), serif;
+  font-size: 25px;
+  text-shadow: 0 1px #ffedc5;
+}
+.ivory-seal[data-pressed='true'] .ivory-seal-core {
+  scale: 0.94;
+  box-shadow:
+    0 2px 5px #5a3b275c,
+    inset 0 2px 6px #8d683b55;
+}
+.ivory-seal:focus-visible {
+  outline: 2px solid #704d28;
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+.ivory-orbit {
+  position: absolute;
+  inset: -4px;
+  width: 120px;
+  height: 120px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: visible;
+  filter: drop-shadow(0 0 5px #ffd17c);
+}
+.ivory-orbit circle {
+  fill: none;
+  stroke: #fff5c4;
+  stroke-width: 1.6;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+.ivory-orbit .ivory-orbit-comet {
+  fill: #fff8df;
+  stroke: #e7b655;
+  stroke-dasharray: none;
+}
+.ivory-opening-caption {
+  position: absolute;
+  top: 65%;
+  left: 12%;
+  right: 12%;
+  text-align: center;
+  background: radial-gradient(
+    ellipse,
+    #f7eddfed 15%,
+    #f7eddfbb 45%,
+    transparent 73%
+  );
+  padding: 15px 0;
+  pointer-events: none;
+}
+.ivory-opening-caption p {
+  margin: 0 0 15px;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+}
+.ivory-opening-caption strong {
+  display: block;
+  font:
+    400 34px/1.05 var(--font-serif),
+    serif;
+}
+.ivory-opening-caption span {
+  display: block;
+  margin-top: 17px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+}
+.ivory-opening-skip {
+  position: absolute;
+  bottom: max(65px, calc(env(safe-area-inset-bottom) + 42px));
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 0;
+  background: #f7eee3e8;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #65513e;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ivory-opening-skip:focus-visible {
+  outline: 2px solid #704d28;
+  outline-offset: 3px;
+}
+.ivory-opening[data-phase='light'] .ivory-seal {
+  cursor: default;
+}
+.ivory-bloom {
+  width: 100%;
+  margin: 0 auto;
+}
+.ivory-bloom-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 0 12px;
+  border: 0;
+  background: transparent;
+  color: #695038;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.ivory-bloom-art {
+  display: block;
+  width: min(100%, 265px);
+  height: auto;
+  overflow: visible;
+}
+.ivory-bloom-button small {
+  font-size: 9px;
+  letter-spacing: 0.17em;
+}
+.ivory-bloom-button > span {
+  margin-top: 10px;
+  font:
+    400 25px/1.2 var(--font-serif),
+    serif;
+}
+.ivory-bloom-button:focus-visible {
+  outline: 2px solid #967044;
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+.ivory-bloom-button:active {
+  color: #352619;
+}
+[data-ivory-trial] .invite-hero-content {
+  overflow-wrap: anywhere;
+}
+[data-ivory-trial] .rsvp-form :is(input, textarea) {
+  font-size: 16px;
+}
+[data-ivory-trial] .garden-effects {
+  min-height: 44px;
+}
+@media (max-height: 650px) {
+  .ivory-opening-caption {
+    top: 61%;
+  }
+  .ivory-opening-caption strong {
+    font-size: 27px;
+  }
+  .ivory-opening-caption p {
+    margin-bottom: 8px;
+  }
+  .ivory-opening-caption span {
+    margin-top: 10px;
+  }
+  .ivory-opening-skip {
+    bottom: 51px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ivory-opening {
+    display: none;
+  }
+  .ivory-seal-core {
+    transition: none;
+  }
+}

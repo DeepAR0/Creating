@@ -1,0 +1,24 @@
+{
+  "name": "Fildişi Rölyef",
+  "slug": "rolyef",
+  "exportedAt": "2026-09-27",
+  "source": "EVET Dijital Davet Atölyesi",
+  "target": "mobile-first React experience",
+  "dependencies": {
+    "gsap": "3.15.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "three": "0.186.1"
+  },
+  "assets": [
+    "public/rolyef-door.webp",
+    "public/rolyef-scene.webp",
+    "public/rolyef-relief-mask.png",
+    "preview/rolyef-light-study.webp"
+  ],
+  "entryPoints": [
+    "source/app/davet/[token]/sealed-door.tsx",
+    "source/app/davet/[token]/three-door-scene.ts",
+    "source/app/davet/[token]/ivory-experience.tsx"
+  ]
+}
