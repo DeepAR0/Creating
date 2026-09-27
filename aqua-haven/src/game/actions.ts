@@ -589,23 +589,27 @@ export function speedUpClutch(g: Game, clutchId: string, how: 'ad' | 'pearls'): 
 
 // ------------------------------------------------------------------ sürpriz yumurta
 
-export function rollEggSpecies(g: Game, water = g.tank.type): SpeciesDef {
+export function rollEggSpecies(g: Game, tank: TankState = g.tank): SpeciesDef {
   const lvl = g.state.player.level;
+  const free = capacityFree(tank);
   const rarities = Object.keys(EGG_ODDS) as Rarity[];
-  for (let attempt = 0; attempt < 10; attempt++) {
+  for (let attempt = 0; attempt < 12; attempt++) {
     const rarity = weightedPick(rarities, (r) => EGG_ODDS[r]);
+    // yalnızca bu tanka sığabilecek türler
     const pool = SPECIES.filter(
-      (sp) => sp.rarity === rarity && sp.water === water && !sp.exclusive && !sp.pearls && sp.level <= lvl + 5,
+      (sp) =>
+        sp.rarity === rarity && sp.water === tank.type && !sp.exclusive && !sp.pearls && sp.level <= lvl + 5 &&
+        (sp.minTier ?? 0) <= tank.tier && sp.bioload <= free,
     );
     if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
   }
-  return getSpecies(water === 'fresh' ? 'goldfish' : 'clown');
+  return getSpecies(tank.type === 'fresh' ? 'zebra' : 'clown');
 }
 
 export function openMysteryEgg(g: Game): Result<FishState> {
   if (!(g.state.inv.items.mysteryEgg > 0)) return fail('noItem');
   const tank = g.tank;
-  const sp = rollEggSpecies(g, tank.type);
+  const sp = rollEggSpecies(g, tank);
   if (capacityFree(tank) < sp.bioload || (sp.minTier ?? 0) > tank.tier) return fail('capacity');
   g.state.inv.items.mysteryEgg--;
   const fish = createFish(g.state, sp.id, g.lang(), { g: 0.08, sex: Math.random() < 0.5 ? 'M' : 'F' });
