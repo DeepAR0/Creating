@@ -419,22 +419,24 @@
       var dv = $('.s-davet');
       if (dv) {
         var kagit = $('.d-kagit', dv), alt = $('.d-alt', dv), satirlar = $$('.d-satir', dv), muhur = $('.d-muhur', dv),
-          rulo = $('.d-rulo', dv), damgaVuruldu = false;
+          rulo = $('.d-rulo', dv), damgaVuruldu = false, kagitH = 0, satirY = null;
+        window.addEventListener('resize', function () { kagitH = 0; satirY = null; });
         S.kaydet(dv, function (p) {
           var acil = K.icCikis3(A(p, 0.04, 0.62));
-          var H = kagit.scrollHeight;
+          var H = kagitH || (kagitH = kagit.offsetHeight);
           kagit.style.clipPath = 'inset(0 0 ' + ((1 - acil) * 100).toFixed(2) + '% 0)';
           kagit.style.webkitClipPath = kagit.style.clipPath;
           alt.style.transform = 'translate3d(0,' + (acil * H).toFixed(1) + 'px,0)';
           alt.style.setProperty('--don', (acil * H * 0.8).toFixed(1) + 'px');   // çubuk dokusu yuvarlanır
           var gorunenY = acil * H;
+          if (!satirY) satirY = satirlar.map(function (s) { return s.offsetTop + s.offsetHeight * 0.6 + 34; });
           satirlar.forEach(function (s, i) {
             if (s === muhur) return;
-            var sy = s.offsetTop + s.offsetHeight * 0.6;
+            var sy = satirY[i];
             var sp = U.kisit((gorunenY - sy) / 90, 0, 1);
             s.style.opacity = sp.toFixed(3);
             s.style.filter = sp < 1 ? 'blur(' + ((1 - sp) * 5).toFixed(1) + 'px)' : '';
-            s.style.letterSpacing = ((1 - sp) * 0.25).toFixed(3) + 'em';
+            s.style.transform = sp < 1 ? 'translate3d(0,' + ((1 - sp) * 14).toFixed(1) + 'px,0) scale(' + (1 + (1 - sp) * 0.12).toFixed(3) + ')' : '';
           });
           var mp = A(p, 0.7, 0.8);
           muhur.style.opacity = U.kisit(mp * 3, 0, 1).toFixed(3);

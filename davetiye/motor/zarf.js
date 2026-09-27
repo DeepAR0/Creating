@@ -31,6 +31,7 @@
     'uniform vec2 uPx;',          // bir ekran pikselinin zarf pikseli karşılığı
     'uniform float uTime;',
     'uniform float uGlint;',      // yaldız parıltı dalgası (0..1)
+    'uniform float uCam;',        // mat bölgeler (fresk / vitray) arkadan aydınlatılmış cam gibi parlasın mı (0..1)
     '',
     'float hP(vec2 uv){ return texture2D(uPD, uv).r; }',
     'float hF(vec2 uv){ return texture2D(uFD, vec2(uv.x, uv.y / uFlapFrac)).r; }',
@@ -59,6 +60,11 @@
     '  float amb = 0.42;',
     '  vec3 paper = alb * (amb + (1.0 - amb) * 1.15 * ndl) * uLightCol + pow(ndh, 26.0) * 0.10 * uLightCol;',
     '  vec3 mat = alb * (0.62 + 0.45 * ndl) * uLightCol;',
+    // vitray: arkadan gelen ışık; ışık yaklaştıkça cam daha çok parlar ve hafifçe titreşir
+    '  float yakin = exp(-dot(uLight.xy - P.xy, uLight.xy - P.xy) / (uSize.x * uSize.x * 0.35));',
+    '  float titres = 0.92 + 0.08 * sin(uTime * 2.3 + P.x * 0.05) * sin(uTime * 1.7 + P.y * 0.04);',
+    '  vec3 cam = alb * (1.05 + 0.55 * yakin) * titres + alb * alb * 0.35 * yakin;',
+    '  mat = mix(mat, cam, uCam);',
     '  paper = mix(paper, mat, matte);',
     '  float Rz = 2.0 * N.z * N.z - 1.0;',
     '  vec2 Rxy = 2.0 * N.z * N.xy;',
@@ -136,7 +142,7 @@
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     var u = {};
     ['uPA', 'uPD', 'uFA', 'uFD', 'uSize', 'uFlapFrac', 'uLight', 'uLightCol', 'uHP', 'uHF', 'uMode',
-      'uFlapCos', 'uPx', 'uTime', 'uGlint'].forEach(function (n) { u[n] = gl.getUniformLocation(p, n); });
+      'uFlapCos', 'uPx', 'uTime', 'uGlint', 'uCam'].forEach(function (n) { u[n] = gl.getUniformLocation(p, n); });
     return { gl: gl, u: u };
   }
 
@@ -300,6 +306,7 @@
     gl.uniform3f(u.uLightCol, 1.0, 0.95, 0.86);
     gl.uniform1f(u.uFlapCos, 1.0);
     gl.uniform1f(u.uMode, 0);
+    gl.uniform1f(u.uCam, m.camIsiltisi || 0);
     gl.clearColor(0, 0, 0, 0);
     var k = m.kanonikIsik;
     this.isik.x = k[0]; this.isik.y = k[1]; this.isik.z = k[2];

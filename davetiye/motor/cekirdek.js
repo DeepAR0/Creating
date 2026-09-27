@@ -75,6 +75,37 @@
   /** Türkçe büyük harf (i -> İ) */
   U.buyuk = function (s) { return String(s || '').toLocaleUpperCase('tr-TR'); };
 
+  /** Metni harf harf <span>'lere böler (animasyon için); ekran okuyucu tam metni okur. */
+  U.harfler = function (metin, sinif) {
+    var h = Array.from(String(metin == null ? '' : metin));
+    return '<span class="' + (sinif || '') + '" aria-label="' + U.kacis(metin) + '">' + h.map(function (c, i) {
+      return '<span class="harf" aria-hidden="true" style="--i:' + i + '">' + (c === ' ' ? '&nbsp;' : U.kacis(c)) + '</span>';
+    }).join('') + '</span>';
+  };
+
+  /** Program ve bölümler için çizgi ikonlar (48x48, stroke ile çizilir) */
+  var IKONLAR = {
+    kadeh: '<path d="M14 6h12l-1 14a5 5 0 0 1-10 0z M20 25v11 M14 36h12 M30 8h12l-1 14a5 5 0 0 1-10 0z M36 27v9 M31 36h11 M22 3l-2-2 M36 4l2-2"/>',
+    yuzuk: '<circle cx="17" cy="26" r="10"/><circle cx="29" cy="26" r="10"/><path d="M13 15l4-6 4 6 M17 9v-3"/>',
+    yemek: '<circle cx="24" cy="24" r="11"/><circle cx="24" cy="24" r="6"/><path d="M6 10v8a3 3 0 0 0 6 0v-8 M9 18v20 M40 10c-4 2-4 10 0 12v16"/>',
+    muzik: '<path d="M18 34V10l18-4v24"/><circle cx="14" cy="34" r="4"/><circle cx="32" cy="30" r="4"/><path d="M18 16l18-4"/>',
+    pasta: '<path d="M8 38h32 M10 38V26h28v12 M13 26v-7h22v7 M24 19v-6 M24 13c-2-2 0-5 0-5s2 3 0 5z M10 31c4 3 8-3 12 0s8-3 12 0 4 0 4 0"/>',
+    kamera: '<rect x="6" y="14" width="36" height="24" rx="3"/><circle cx="24" cy="26" r="7"/><path d="M16 14l3-5h10l3 5"/>',
+    dans: '<circle cx="18" cy="8" r="3"/><circle cx="30" cy="8" r="3"/><path d="M18 11l-4 12 4 4-2 12 M18 11l6 8 6-8 M30 11l4 12-4 4 2 12 M14 23l-5-4 M34 23l5-4"/>',
+    kalp: '<path d="M24 40S6 28 6 16a9 9 0 0 1 18-2 9 9 0 0 1 18 2c0 12-18 24-18 24z"/>',
+    yildiz: '<path d="M24 4l5.9 12 13.1 1.9-9.5 9.3 2.2 13.1L24 34l-11.7 6.2 2.2-13.1L5 17.9 18.1 16z"/>',
+    tac: '<path d="M6 36h36 M8 36l-2-22 10 9 8-15 8 15 10-9-2 22 M24 8v-2"/><circle cx="24" cy="5" r="1.5"/>',
+    kitap: '<path d="M24 12c-5-4-12-4-18-2v28c6-2 13-2 18 2 5-4 12-4 18-2V10c-6-2-13-2-18 2z M24 12v28"/>',
+    anahtar: '<circle cx="14" cy="24" r="8"/><path d="M22 24h20 M36 24v6 M42 24v5"/>',
+    pusula: '<circle cx="24" cy="24" r="18"/><path d="M24 10l5 14-5 14-5-14z M24 24l0 0"/>',
+    ay: '<path d="M30 6a18 18 0 1 0 12 30A15 15 0 0 1 30 6z"/>',
+    maske: '<path d="M6 14c6-2 12-2 18 2 6-4 12-4 18-2 0 10-4 18-10 18-4 0-6-4-8-4s-4 4-8 4C10 32 6 24 6 14z"/><circle cx="16" cy="20" r="3"/><circle cx="32" cy="20" r="3"/>',
+    hediye: '<rect x="8" y="18" width="32" height="22" rx="2"/><path d="M6 12h36v6H6z M24 12v28 M24 12c-4-8-12-6-10-1 1 2 6 2 10 1 4 1 9 1 10-1 2-5-6-7-10 1z"/>'
+  };
+  U.ikon = function (ad) {
+    return '<svg viewBox="0 0 48 48" aria-hidden="true">' + (IKONLAR[ad] || IKONLAR.kalp) + '</svg>';
+  };
+
   var AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   var GUNLER = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   /**

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Deniz'in 30. Yaş Günü — Davetiye</title>
+  <meta name="description" content="Deniz'in 30. yaş günü gecesine davetlisiniz. 20 Mart 2027, Taş Mahzen.">
+  <meta name="theme-color" content="#070a1a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Deniz'in 30. Yaş Günü">
+  <meta property="og:description" content="20 Mart 2027 · Taş Mahzen — Bu gece seni de aramızda görmek istiyoruz.">
+  <!-- Yayında og:image mutlak adres olmalı (WhatsApp önizlemesi için) -->
+  <meta property="og:image" content="temalar/gotik/gorsel/paylasim.jpg">
+  <link rel="preload" href="yazitipleri/grenze-gotisch.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="yazitipleri/unifraktur-maguntia.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="yazitipleri/yazitipleri.css">
+  <link rel="stylesheet" href="motor/davetiye.css">
+  <link rel="stylesheet" href="temalar/gotik/tema.css">
+</head>
+<body>
+  <noscript><p style="padding:24px;text-align:center">Davetiyeyi görüntülemek için JavaScript'i etkinleştirin.</p></noscript>
+
+  <script>
+    /* ------------------------------------------------------------------
+     * DAVETİYE BİLGİLERİ — yalnızca bu bloğu düzenlemeniz yeterli.
+     * Misafire özel bağlantı: dogum-gunu-gotik.html?kisi=Ece
+     * ------------------------------------------------------------------ */
+    window.DAVETIYE = {
+      tema: 'gotik',
+      tur: 'dogumgunu',
+      baslik: "Deniz'in 30. Yaş Günü — Davetiye",
+      monogram: 'D',
+      kisi: { ad: 'Deniz', soyad: 'Aydın' },
+      yas: 30,
+      tarih: '2027-03-20T20:30:00+03:00',
+      saatDilimi: 'Europe/Istanbul',
+      sureSaat: 5,
+      mekan: {
+        ad: 'Taş Mahzen',
+        adres: 'Kuledibi Sokak No: 7, Galata / İstanbul',
+        koordinat: [41.0256, 28.9741]
+      },
+      hikaye: [
+        { yil: '1997', baslik: 'Merhaba Dünya', metin: 'Bir bahar gecesi, yıldızların altında hikâye başladı.', simge: 'yildiz', renk: 'safir' },
+        { yil: '2015', baslik: 'İlk Sahne', metin: 'Tiyatro kulübünde perde açıldı, alkışlar hiç dinmedi.', simge: 'maske', renk: 'yakut' },
+        { yil: '2021', baslik: 'Yollara Düştük', metin: 'Bir sırt çantası, bir pusula ve sayısız şehir.', simge: 'pusula', renk: 'zumrut' },
+        { yil: '2027', baslik: 'Otuz!', metin: 'Yeni bir on yıl, yeni bir bölüm — ve sen buradasın.', simge: 'tac', renk: 'ametist' }
+      ],
+      davetMetni: 'Hayatımın otuzuncu baharını karşılarken, bu geceyi en sevdiklerimle, mum ışığında ve bol kahkahayla kutlamak istiyorum. Taş duvarların arasında, eski bir hikâyenin yeni sayfasını birlikte açalım.',
+      kiyafet: 'Gece şıklığı — koyu tonlar ve bir parça altın',
+      program: [
+        { saat: '20:30', baslik: 'Kapılar Açılıyor', aciklama: 'Karşılama kokteyli ve mum ışığı' },
+        { saat: '21:30', baslik: 'Akşam Yemeği', aciklama: 'Mahzende uzun masa' },
+        { saat: '23:00', baslik: 'Pasta ve Dilekler', aciklama: 'Mumlar söner, dilekler tutulur' },
+        { saat: '23:30', baslik: 'Dans', aciklama: 'Sabaha karşıya kadar' }
+      ],
+      lcv: {
+        sonTarih: '10 Mart 2027',
+        whatsapp: '905551112233',
+        endpoint: '',
+        enFazla: 4
+      },
+      muzik: { parca: 'dogumgunu' },
+      kapanis: 'Dileklerini hazırla, bu gece mumları birlikte üfleyeceğiz.',
+      metin: { zarfUst: 'YAŞ GÜNÜ DAVETİYESİ', iyiKi: 'İyi ki doğdun', hikayeBaslik: 'Yıllar Boyu' }
+    };
+  </script>
+  <script src="motor/cekirdek.js"></script>
+  <script src="motor/muzik.js"></script>
+  <script src="motor/zarf.js"></script>
+  <script src="temalar/gotik/tema.js"></script>
+  <script>Davetiye.baslat();</script>
+</body>
+</html>

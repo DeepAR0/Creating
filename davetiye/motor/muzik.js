@@ -195,8 +195,8 @@
     return true;
   };
 
-  Muzik.prototype._planla = function () {
-    var c = this.ctx, p = this.plan, ileri = c.currentTime + 0.35;
+  Muzik.prototype._planla = function (ileriSn) {
+    var c = this.ctx, p = this.plan, ileri = c.currentTime + (ileriSn || 0.35);
     while (true) {
       if (this.sira >= p.olay.length) {
         this.sira = 0;
