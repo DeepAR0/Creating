@@ -56,7 +56,7 @@ davetiye/
 1. Uygun demo dosyasını kopyalayın (ör. `dugun-barok.html` → `ayse-mehmet.html`).
 2. Dosyadaki `window.DAVETIYE = { … }` bloğunu düzenleyin.
 3. `<title>`, `description` ve `og:*` etiketlerini güncelleyin. `og:image` WhatsApp önizlemesi
-   için **mutlak adres** olmalıdır (ör. `https://siteniz.com/davetiye/temalar/barok/gorsel/paylasim.jpg`).
+   için **mutlak adres** olmalıdır (ör. `https://evetde.com.tr/davetiye/temalar/barok/gorsel/paylasim.jpg`).
 4. Klasörü sunucuya yükleyin. Başka hiçbir şey gerekmez.
 
 ### Yapılandırma alanları
@@ -89,7 +89,7 @@ Bağlantıya `?kisi=` eklenirse misafirin adı zarftaki kurdelede ("Sayın Ayşe
 ve LCV formunda hazır görünür:
 
 ```
-https://siteniz.com/davetiye/ayse-mehmet.html?kisi=Ayşe+Hanım+ve+Ailesi
+https://evetde.com.tr/davetiye/ayse-mehmet.html?kisi=Ayşe+Hanım+ve+Ailesi
 ```
 
 Katalog sayfasındaki araç bu bağlantıyı üretir. Gotik temada el yazması hitabı da bu adı kullanır.

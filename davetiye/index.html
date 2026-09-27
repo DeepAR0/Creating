@@ -196,7 +196,7 @@
       <p>Davetiyenin yayınlandığı adresi ve misafirin adını yazın; zarfta adıyla karşılanacağı bağlantı hazırlanır.</p>
       <div class="alan">
         <label for="adres">Davetiye adresi</label>
-        <input id="adres" type="url" inputmode="url" value="https://siteniz.com/davetiye/dugun-barok.html" autocomplete="off">
+        <input id="adres" type="url" inputmode="url" value="https://evetde.com.tr/davetiye/dugun-barok.html" autocomplete="off">
       </div>
       <div class="alan">
         <label for="misafir">Misafirin adı</label>
@@ -223,7 +223,7 @@
     var cikti = document.getElementById('baglanti');
     var durum = document.getElementById('kopya-durum');
     function uret() {
-      var a = adres.value.trim() || 'https://siteniz.com/davetiye/dugun-barok.html';
+      var a = adres.value.trim() || 'https://evetde.com.tr/davetiye/dugun-barok.html';
       var m = misafir.value.trim();
       var temiz = a.split('#')[0].split('?')[0];
       cikti.value = m ? temiz + '?kisi=' + encodeURIComponent(m).replace(/%20/g, '+') : temiz;
