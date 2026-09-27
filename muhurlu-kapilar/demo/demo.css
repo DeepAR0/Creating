@@ -1,0 +1,319 @@
+/* Önizleme uygulamasının kendi yüzeyleri: koleksiyon, üst çubuk, atölye. */
+:root {
+  --font-serif: 'Cormorant Garamond';
+  --font-sans: 'Jost';
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: #14100c;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100svh;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+html[data-theme='rolyef'],
+html[data-theme='rolyef'] body {
+  background: #e6dccb;
+  color-scheme: light;
+}
+html[data-theme='kakma'],
+html[data-theme='kakma'] body {
+  background: #120a05;
+}
+html[data-theme='kisbahcesi'],
+html[data-theme='kisbahcesi'] body {
+  background: #0a0706;
+}
+html[data-theme='pera'],
+html[data-theme='pera'] body {
+  background: #050506;
+}
+html.kapi-kilitli,
+html.kapi-kilitli body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Koleksiyon */
+.galeri {
+  width: min(100%, 480px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: max(40px, env(safe-area-inset-top)) 18px 40px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(201 164 92 / 0.14), transparent 60%),
+    #14100c;
+  color: #f1e8da;
+}
+.galeri-head {
+  padding: 8px 6px 26px;
+  text-align: center;
+}
+.galeri-kicker {
+  margin: 0 0 12px;
+  color: #c9a45c;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+.galeri-head h1 {
+  margin: 0;
+  font:
+    400 46px/1 var(--font-serif),
+    Georgia,
+    serif;
+}
+.galeri-head p:last-child {
+  max-width: 340px;
+  margin: 14px auto 0;
+  color: #cbbda7;
+  font:
+    400 18px/1.4 var(--font-serif),
+    Georgia,
+    serif;
+}
+.galeri-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.galeri-card {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 16px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgb(201 164 92 / 0.22);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+.galeri-card:hover {
+  border-color: rgb(201 164 92 / 0.5);
+  background: rgb(255 255 255 / 0.05);
+}
+.galeri-card:active {
+  transform: scale(0.99);
+}
+.galeri-card:focus-visible {
+  outline: 2px solid #c9a45c;
+  outline-offset: 3px;
+}
+.galeri-cover {
+  display: block;
+  aspect-ratio: 9 / 16;
+  border-radius: 10px;
+  background: #222 center / 100% 100% no-repeat;
+  box-shadow:
+    0 12px 26px -12px rgb(0 0 0 / 0.8),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.galeri-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 4px 4px 4px 0;
+}
+.galeri-body small {
+  color: #c9a45c;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.galeri-body strong {
+  margin-top: 4px;
+  font:
+    500 27px/1.05 var(--font-serif),
+    Georgia,
+    serif;
+}
+.galeri-material {
+  margin-top: 6px;
+  color: #d9ccb6;
+  font-size: 12.5px;
+}
+.galeri-copy {
+  margin-top: 8px;
+  color: #b8aa94;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.galeri-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+.galeri-meta :is(em, b, i) {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.galeri-meta em {
+  border: 1px solid rgb(201 164 92 / 0.45);
+  color: #e6cf9f;
+}
+.galeri-meta b {
+  background: #c9a45c;
+  color: #1a130c;
+  letter-spacing: 0.14em;
+}
+.galeri-meta i {
+  background: rgb(255 255 255 / 0.07);
+  color: #d9ccb6;
+}
+.galeri-foot {
+  padding: 22px 8px 0;
+  color: #9c8f7b;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Önizleme çubuğu: kapının ve davetiyenin üstünde, sol üstte. */
+.demo-bar {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(12px, calc(50% - 228px));
+  z-index: 140;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgb(20 16 12 / 0.46);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.demo-bar button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #f3eadb;
+  cursor: pointer;
+}
+.demo-bar button:focus-visible {
+  outline: 2px solid #c9a45c;
+  outline-offset: 1px;
+}
+.demo-bar svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Atölye */
+.atolye {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.35);
+}
+.atolye-sheet {
+  width: min(100%, 480px);
+  max-height: 82svh;
+  overflow: auto;
+  padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  background: #1c1713;
+  color: #f3eadb;
+  box-shadow: 0 -20px 50px rgb(0 0 0 / 0.5);
+}
+.atolye-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.atolye-head strong {
+  font:
+    500 26px var(--font-serif),
+    Georgia,
+    serif;
+}
+.atolye-close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.06);
+  color: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+.atolye-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+.atolye-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.atolye-field span {
+  color: #bfae8f;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.atolye-field :is(input, select) {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgb(201 164 92 / 0.3);
+  border-radius: 10px;
+  background: #120e0b;
+  color: #f3eadb;
+  font: inherit;
+  font-size: 16px;
+}
+.atolye-hint {
+  margin: 14px 2px 0;
+  color: #a4967f;
+  font-size: 12.5px;
+}
+.atolye-replay {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #c9a45c;
+  color: #1a130c;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}

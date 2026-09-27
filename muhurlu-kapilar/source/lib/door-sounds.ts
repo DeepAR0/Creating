@@ -505,3 +505,53 @@ export function haptic(pattern: number | number[]) {
 export function unlockSounds() {
   audio();
 }
+
+/** Kadeh tokuşması: iki uyumsuz kısmi ses ve hafif vuru. */
+export function playClink() {
+  const ctx = audio();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const out = output(ctx, 0.16);
+  [
+    [2637, 0.45, 1.6],
+    [3951, 0.25, 1.1],
+    [5274, 0.12, 0.6],
+    [2651, 0.3, 1.5],
+  ].forEach(([f, level, length]) => bell(ctx, out, f, now, level, length));
+  const tick = ctx.createBufferSource();
+  tick.buffer = noiseBuffer(ctx, 0.02);
+  const hp = ctx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 5000;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.4, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+  tick.connect(hp).connect(g).connect(out);
+  tick.start(now);
+}
+
+/** Hikâye dokunuşları için kısa, temaya uygun bir tını. */
+export function playTouch(scape: DoorSoundscape = 'classic') {
+  const ctx = audio();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  if (scape === 'deco') return playClink();
+  const out = output(ctx, scape === 'winter' ? 0.14 : 0.18);
+  if (scape === 'pearl') {
+    [62, 69, 74].forEach((m, i) =>
+      pluck(ctx, out, hz(m), now + i * 0.12, { level: 0.6, seconds: 1.6, brightness: 0.36, bend: 1.01 }),
+    );
+    return;
+  }
+  if (scape === 'winter') {
+    [88, 91, 95].forEach((m, i) => {
+      const f = hz(m);
+      bell(ctx, out, f, now + i * 0.12, 0.45, 1.5);
+      bell(ctx, out, f * 2.01, now + i * 0.12, 0.12, 0.7);
+    });
+    return;
+  }
+  [76, 80, 83].forEach((m, i) =>
+    pluck(ctx, out, hz(m), now + i * 0.08, { level: 0.55, seconds: 1.8, brightness: 0.62, pan: -0.2 + i * 0.2 }),
+  );
+}

@@ -222,8 +222,9 @@ export function SealedDoor({
       engine.current = null;
       props.current.onEngine?.(null);
     };
-    // Tasarım ya da açılış biçimi değişince sahne yeniden kurulur.
-  }, [theme, appearance.opening, appearance.palette, date]);
+    // Tasarım ya da açılış biçimi değişince sahne yeniden kurulur; çizimli
+    // kapıda harfler kapıya işlendiği için isimler değişince de.
+  }, [theme, appearance.opening, appearance.palette, date, door.procedural ? initials : '']);
   useEffect(() => {
     if (phase === 'loading' || !sealKey) return;
     engine.current?.setSeal(latest.current.sealSpec, latest.current.wax);

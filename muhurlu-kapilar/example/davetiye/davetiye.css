@@ -1,0 +1,664 @@
+/* Örnek davetiye sayfası. Kapının malzemesi sayfada sürer: Fildişi'nde
+   zambaklı kâğıt, Sedef Kakma'da ceviz ve sedef, Kış Bahçesi'nde buzlu
+   cam kartlar ve sıcak ışıklar, Pera'da siyah lake ve pirinç. */
+
+.davetiye {
+  --bg: #f7f1e7;
+  --ink: #4b3920;
+  --muted: #6f5a40;
+  --accent: #9a763f;
+  --line: rgb(154 118 63 / 0.32);
+  --card: rgb(255 252 246 / 0.78);
+  --card-line: rgb(154 118 63 / 0.26);
+  --button: #8f6d3a;
+  --button-ink: #fffaf0;
+  --heading: var(--font-serif, 'Cormorant Garamond'), Georgia, serif;
+  --hero: url('/rolyef-scene.webp') center top / 100% auto no-repeat;
+  position: relative;
+  width: min(100%, 480px);
+  min-height: 100svh;
+  margin: 0 auto;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans, 'Jost'), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+}
+.davetiye[data-theme='kakma'] {
+  --bg: #1c110a;
+  --ink: #f1e8da;
+  --muted: #d0c2ab;
+  --accent: #dcc9a2;
+  --line: rgb(220 201 162 / 0.3);
+  --card: rgb(255 245 230 / 0.05);
+  --card-line: rgb(220 201 162 / 0.24);
+  --button: #dcc9a2;
+  --button-ink: #24150b;
+  --hero:
+    radial-gradient(ellipse at 50% 40%, transparent 30%, #1c110a 78%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 0L38.79 8.79L51.21 8.79L51.21 21.21L60 30L51.21 38.79L51.21 51.21L38.79 51.21L30 60L21.21 51.21L8.79 51.21L8.79 38.79L0 30L8.79 21.21L8.79 8.79L21.21 8.79Z' fill='none' stroke='%23eadfc9' stroke-opacity='.16'/%3E%3Ccircle cx='30' cy='30' r='3' fill='%23eadfc9' fill-opacity='.18'/%3E%3C/svg%3E")
+      center / 60px 60px,
+    linear-gradient(#2c1a0e, #1c110a);
+}
+.davetiye[data-theme='kisbahcesi'] {
+  --bg: #120d0b;
+  --ink: #f6efe4;
+  --muted: #d8cab8;
+  --accent: #f2c68e;
+  --line: rgb(242 198 142 / 0.3);
+  --card: rgb(255 255 255 / 0.07);
+  --card-line: rgb(255 255 255 / 0.16);
+  --button: #1f6b55;
+  --button-ink: #f6efe4;
+  --hero:
+    radial-gradient(circle at 18% 22%, rgb(255 200 125 / 0.42), transparent 9%),
+    radial-gradient(circle at 82% 18%, rgb(255 185 110 / 0.36), transparent 8%),
+    radial-gradient(circle at 70% 46%, rgb(255 210 150 / 0.3), transparent 12%),
+    radial-gradient(circle at 26% 64%, rgb(255 180 100 / 0.28), transparent 11%),
+    radial-gradient(circle at 88% 76%, rgb(255 205 140 / 0.3), transparent 9%),
+    radial-gradient(ellipse at 50% 100%, rgb(214 128 60 / 0.35), transparent 60%),
+    linear-gradient(#0f0b09, #26170e);
+}
+.davetiye[data-theme='pera'] {
+  --bg: #0b0b0d;
+  --ink: #f3e6c8;
+  --muted: #c3b18d;
+  --accent: #c9a45c;
+  --line: rgb(201 164 92 / 0.4);
+  --card: #121114;
+  --card-line: rgb(201 164 92 / 0.55);
+  --button: #c9a45c;
+  --button-ink: #0b0b0d;
+  --heading: 'Poiret One', var(--font-serif, 'Cormorant Garamond'), Georgia, serif;
+  --hero:
+    radial-gradient(circle at 50% 42%, #0b0b0d 0 17%, transparent 17.3%),
+    radial-gradient(circle at 50% 42%, transparent 0 60%, #0b0b0d 72%),
+    repeating-conic-gradient(from 0deg at 50% 42%, rgb(201 164 92 / 0.22) 0deg 0.9deg, transparent 0.9deg 6.4deg),
+    #0b0b0d;
+}
+
+/* Kahraman bölüm */
+.davetiye-hero {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  padding: max(56px, env(safe-area-inset-top)) 28px 88px;
+  place-items: center;
+  background: var(--hero);
+}
+.davetiye[data-theme='rolyef'] .davetiye-hero {
+  background:
+    url('/rolyef-scene.webp') center / cover no-repeat,
+    var(--bg);
+}
+.davetiye[data-theme='pera'] .davetiye-hero::before,
+.davetiye[data-theme='pera'] .davetiye-hero::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.davetiye[data-theme='pera'] .davetiye-hero::after {
+  inset: 22px;
+  border-color: rgb(201 164 92 / 0.2);
+}
+.davetiye-hero-inner {
+  position: relative;
+  max-width: 340px;
+}
+.davetiye[data-theme='kisbahcesi'] .davetiye-hero-inner {
+  padding: 30px 22px 26px;
+  border: 1px solid var(--card-line);
+  border-radius: 170px 170px 18px 18px;
+  background: rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8);
+}
+.davetiye-kicker {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.34em;
+}
+.davetiye-monogram {
+  display: block;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 10px;
+  overflow: visible;
+}
+.davetiye-monogram-frame {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+.davetiye-monogram text {
+  fill: var(--ink);
+  font:
+    500 26px var(--heading);
+  letter-spacing: 0.02em;
+}
+.davetiye-monogram-amp {
+  fill: var(--accent);
+  font-size: 15px;
+  font-style: italic;
+}
+.davetiye h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font:
+    400 clamp(46px, 14vw, 66px) / 0.95 var(--heading);
+  overflow-wrap: anywhere;
+}
+.davetiye h1 em {
+  margin: 4px 0;
+  color: var(--accent);
+  font-size: 0.5em;
+}
+.davetiye[data-theme='pera'] h1 {
+  letter-spacing: 0.04em;
+}
+.davetiye-date {
+  margin: 22px 0 0;
+  font:
+    500 21px/1.2 var(--heading);
+  letter-spacing: 0.02em;
+}
+.davetiye-place {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.davetiye-intro {
+  max-width: 290px;
+  margin: 18px auto 0;
+  color: var(--muted);
+  font:
+    italic 400 19px/1.35 var(--font-serif, 'Cormorant Garamond'),
+    serif;
+  text-wrap: balance;
+}
+.davetiye-countdown {
+  margin-top: 26px;
+}
+.davetiye-countdown small {
+  display: block;
+  color: var(--accent);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+}
+.davetiye-countdown ol {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.davetiye-countdown li {
+  padding: 8px 2px 6px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.davetiye[data-theme='pera'] .davetiye-countdown li {
+  border-radius: 0;
+}
+.davetiye-countdown strong {
+  display: block;
+  font:
+    500 26px/1 var(--heading);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.davetiye-countdown span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+}
+.davetiye-countdown-done {
+  margin: 24px 0 0;
+  font:
+    italic 500 20px var(--font-serif, 'Cormorant Garamond'),
+    serif;
+}
+.davetiye-scroll {
+  position: absolute;
+  left: 50%;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  translate: -50% 0;
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  padding: 0 12px 18px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.davetiye-scroll::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  rotate: 45deg;
+  animation: davetiye-nudge 2.2s ease-in-out infinite;
+}
+@keyframes davetiye-nudge {
+  0%,
+  100% {
+    translate: 0 -3px;
+    opacity: 0.4;
+  }
+  50% {
+    translate: 0 3px;
+    opacity: 1;
+  }
+}
+
+/* Bölümler */
+.davetiye-section {
+  position: relative;
+  padding: 64px 26px 12px;
+}
+.davetiye h2 {
+  margin: 0 0 26px;
+  font:
+    400 34px/1.1 var(--heading);
+}
+.davetiye h2::after {
+  content: '';
+  display: block;
+  width: 64px;
+  height: 7px;
+  margin: 14px auto 0;
+  background:
+    radial-gradient(circle, var(--accent) 0 2.4px, transparent 2.8px) center / 7px 7px no-repeat,
+    linear-gradient(var(--line), var(--line)) left center / 26px 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) right center / 26px 1px no-repeat;
+}
+.davetiye[data-theme='pera'] h2::after {
+  background:
+    linear-gradient(45deg, transparent 40%, var(--accent) 41% 59%, transparent 60%) center / 7px 7px no-repeat,
+    linear-gradient(var(--line), var(--line)) left center / 26px 1px no-repeat,
+    linear-gradient(var(--line), var(--line)) right center / 26px 1px no-repeat;
+}
+.davetiye h3 {
+  margin: 2px 0 4px;
+  font:
+    500 25px/1.15 var(--heading);
+}
+.davetiye-lead {
+  max-width: 330px;
+  margin: 0 auto 18px;
+  color: var(--muted);
+  font:
+    400 18px/1.45 var(--font-serif, 'Cormorant Garamond'),
+    serif;
+  text-wrap: pretty;
+}
+.davetiye-note {
+  margin: 12px auto 0;
+  max-width: 320px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.davetiye-card {
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  background: var(--card);
+}
+.davetiye[data-theme='kisbahcesi'] .davetiye-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.davetiye[data-theme='pera'] .davetiye-card {
+  border-radius: 0;
+  box-shadow:
+    inset 0 0 0 4px var(--card),
+    inset 0 0 0 5px rgb(201 164 92 / 0.25);
+}
+
+/* Hikâye */
+.davetiye-story {
+  max-width: 340px;
+  margin: 18px auto 0;
+  animation: davetiye-rise 0.8s ease both;
+}
+.davetiye-story p {
+  margin: 0 0 14px;
+  font:
+    400 19px/1.5 var(--font-serif, 'Cormorant Garamond'),
+    serif;
+  text-wrap: pretty;
+}
+.davetiye-milestones {
+  display: grid;
+  gap: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.davetiye-milestones li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.davetiye-milestones strong {
+  color: var(--accent);
+  font:
+    500 21px var(--heading);
+}
+@keyframes davetiye-rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Tören */
+.davetiye-events {
+  display: grid;
+  gap: 16px;
+}
+.davetiye-event {
+  padding: 22px 20px 20px;
+}
+.davetiye-time {
+  margin: 0;
+  color: var(--accent);
+  font:
+    500 30px/1 var(--heading);
+}
+.davetiye-venue {
+  margin: 6px 0 0;
+  font-weight: 500;
+}
+.davetiye-address {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.davetiye-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.davetiye-button {
+  display: inline-grid;
+  min-height: 44px;
+  place-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+}
+.davetiye[data-theme='pera'] .davetiye-button {
+  border-radius: 0;
+}
+.davetiye-button.is-primary {
+  width: 100%;
+  margin-top: 18px;
+  border-color: var(--button);
+  background: var(--button);
+  color: var(--button-ink);
+}
+.davetiye-button:focus-visible,
+.davetiye-link:focus-visible,
+.davetiye :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Akış */
+.davetiye-program {
+  position: relative;
+  max-width: 340px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.davetiye-program::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 72px;
+  width: 1px;
+  background: var(--line);
+}
+.davetiye-program li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 28px;
+  padding: 10px 0;
+}
+.davetiye-program li::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 68px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.davetiye[data-theme='pera'] .davetiye-program li::before,
+.davetiye[data-theme='kakma'] .davetiye-program li::before {
+  border-radius: 0;
+  rotate: 45deg;
+}
+.davetiye-program time {
+  color: var(--accent);
+  font:
+    500 20px/1.5 var(--heading);
+  font-variant-numeric: lining-nums tabular-nums;
+  text-align: right;
+}
+.davetiye[data-theme='pera'] .davetiye-program time {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.davetiye-program strong {
+  display: block;
+  font:
+    500 21px/1.3 var(--heading);
+}
+.davetiye-program span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Menü */
+.davetiye-menu {
+  display: grid;
+  gap: 18px;
+  max-width: 330px;
+  margin: 0 auto;
+}
+.davetiye-menu dt {
+  color: var(--accent);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+.davetiye-menu dd {
+  margin: 4px 0 0;
+  font:
+    400 19px/1.35 var(--font-serif, 'Cormorant Garamond'),
+    serif;
+}
+
+/* Hediye */
+.davetiye-iban {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  max-width: 340px;
+  margin: 0 auto;
+  padding: 20px 18px;
+}
+.davetiye-iban code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.davetiye-iban span {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Katılım */
+.davetiye-rsvp,
+.davetiye-thanks {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 22px 20px;
+  text-align: left;
+}
+.davetiye-rsvp .davetiye-lead {
+  text-align: center;
+}
+.davetiye-rsvp label,
+.davetiye-rsvp legend {
+  display: block;
+  margin: 14px 0 6px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.davetiye-rsvp fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.davetiye-rsvp :is(input:not([type='radio']), select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-line);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.davetiye[data-theme='rolyef'] .davetiye-rsvp :is(input:not([type='radio']), select, textarea) {
+  background: #fffdf8;
+}
+.davetiye[data-theme='pera'] .davetiye-rsvp :is(input:not([type='radio']), select, textarea) {
+  border-radius: 0;
+}
+.davetiye-rsvp select option {
+  color: #222;
+}
+.davetiye-rsvp label.davetiye-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+.davetiye-choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.davetiye-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 12px;
+}
+.davetiye-thanks {
+  text-align: center;
+}
+.davetiye-thanks p {
+  margin: 0 0 8px;
+  font:
+    400 21px/1.35 var(--font-serif, 'Cormorant Garamond'),
+    serif;
+}
+.davetiye-link {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* Kapanış */
+.davetiye-footer {
+  padding: 56px 26px calc(56px + env(safe-area-inset-bottom));
+  color: var(--muted);
+  font-size: 13px;
+}
+.davetiye-hashtag {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font:
+    500 24px var(--heading);
+}
+.davetiye-signature {
+  margin: 26px 0 0;
+  color: var(--ink);
+  font:
+    italic 400 21px var(--font-serif, 'Cormorant Garamond'),
+    serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .davetiye-story {
+    animation: none;
+  }
+  .davetiye-scroll::after {
+    animation: none;
+  }
+}

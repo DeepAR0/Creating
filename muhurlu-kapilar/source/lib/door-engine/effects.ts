@@ -116,7 +116,7 @@ export function createParticles(
     uTime: { value: 0 },
     uOpacity: { value: 0 },
     uPixelRatio: { value: 1 },
-    uSize: { value: kind === 'bubbles' ? 15 : kind === 'snow' ? 18 : 15 },
+    uSize: { value: kind === 'bubbles' ? 15 : kind === 'snow' ? 12 : 15 },
     uRise: { value: kind === 'snow' ? -0.55 : kind === 'bubbles' ? 1.25 : 0.18 },
     uArea: { value: new THREE.Vector2(area.width, area.height) },
     // Işık rengini gölgelendiriciye ekran uzayında (sRGB) veriyoruz.
