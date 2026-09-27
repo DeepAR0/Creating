@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import type { DoorConfig } from '@/lib/door-themes';
+import { hasWave, type DoorConfig, type DoorFinish } from '@/lib/door-themes';
 import {
   buildSealMaps,
   crackGlowCanvas,
@@ -10,19 +10,42 @@ import {
   type SealSpec,
   type WaxTone,
 } from '@/lib/wax-seal';
+import { buildSurface, paintedSize, type DoorPersonal } from '@/lib/door-engine/surface';
+import { createReliefUniforms, leafMaterial, surfaceTextures } from '@/lib/door-engine/materials';
+import { createInnerGlow, createParticles, seamTexture, studioScene } from '@/lib/door-engine/effects';
+import {
+  LEAF_W,
+  buildHandles,
+  buildKey,
+  buildKnocker,
+  buildRibbon,
+  meshIn,
+  type Kit,
+  type Layout,
+} from '@/lib/door-engine/fixtures';
+import { buildGlass } from '@/lib/door-engine/glass';
 
-/* Mühürlü kapı. İki menteşeli kanat, kabartma haritasıyla ışık alır.
-   Balmumu mühür iki kanadın birleştiği yerdedir: dokununca ortadan
-   çatlar, her yarısı kendi kanadına bağlı kalır ve onunla açılır.
-   Tokmak, ipek kurdele ve basılı tutma ritüelleri aynı sahnededir. */
+/* Mühürlü kapı. İki kanat kabartma haritasıyla ışık alır. Balmumu mühür
+   iki kanadın birleştiği yerdedir: dokununca ortadan çatlar, her yarısı
+   kendi kanadına bağlı kalır ve onunla açılır. Açılırken mühürden bir
+   ışık dalgası kabartmalara yayılır, kamera eşikten içeri süzülür,
+   aralıktan taşan ışığın içinde parçacıklar uçuşur.
+
+   Ritüeller: dokunma, basılı tutma, tokmak, kurdele (özgün); anahtar,
+   buğulu cam ve sürgülü kanatlar (yeni). Görsel kapılar resimden,
+   çizimli kapılar tarayıcıda boyanan katmanlardan kurulur. */
 
 export type DoorAnchors = {
   seal: { x: number; y: number; size: number };
   knocker?: { x: number; y: number; size: number };
   ribbon?: { x: number; y: number; width: number; height: number };
+  /** Anahtarın döndüğü nokta ve halkanın ucu (yüzde) ile boyu (px). */
+  key?: { x: number; y: number; tipX: number; tipY: number; size: number };
 };
 
-export type DoorCue = 'crack' | 'doors';
+export type DoorCue = 'crack' | 'doors' | 'unlock';
+export type OpeningMode = 'cinematic' | 'gentle';
+export type LightPalette = 'original' | 'warm' | 'cool';
 
 type Options = {
   host: HTMLElement;
@@ -35,28 +58,42 @@ type Options = {
   onLayout?: (anchors: DoorAnchors) => void;
   /** Ses ve titreşim için zaman çizelgesindeki anlar. */
   onCue?: (cue: DoorCue) => void;
+  /** Çizimli kapılara işlenen harfler ve tarih. */
+  personal?: DoorPersonal;
+  /** cinematic: kamera eşikten geçer; gentle: sakin ve kısa. */
+  mode?: OpeningMode;
+  /** Işığın rengi: tasarımın kendisi, daha sıcak ya da daha serin. */
+  palette?: LightPalette;
+  /** Telefon eğildikçe ışık kabartmalarda gezinsin (izin istemeden). */
+  tilt?: boolean;
 };
 
-const LEAF_W = 2.03;
 const SEAL_WORLD = 0.96;
+const CAMERA_Z = 9;
+
+/** Cilaya göre ışık düzeni; mat (Fildişi) özgün değerlerdir. */
+const rigs: Record<
+  DoorFinish,
+  { sky: string; ground: string; hemi: number; key: number; fill: number; exposure: number }
+> = {
+  matte: { sky: '#fff8e9', ground: '#ab9270', hemi: 2.5, key: 2.6, fill: 0.8, exposure: 1.1 },
+  pearl: { sky: '#fff1dc', ground: '#4a3020', hemi: 1.15, key: 2.9, fill: 0.55, exposure: 1.1 },
+  lacquer: { sky: '#fff4e0', ground: '#2e261c', hemi: 1.1, key: 2.8, fill: 0.6, exposure: 1.1 },
+  iron: { sky: '#eef1f5', ground: '#3a3029', hemi: 1.4, key: 2.4, fill: 0.8, exposure: 1.08 },
+};
+
+function tint(hex: string, palette: LightPalette) {
+  const color = new THREE.Color(hex);
+  if (palette === 'warm') color.lerp(new THREE.Color('#ffc27a'), 0.28);
+  if (palette === 'cool') color.lerp(new THREE.Color('#d9e6ff'), 0.45);
+  return color;
+}
 
 function canvasTexture(source: TexImageSource, color = false) {
   const texture = new THREE.CanvasTexture(source as HTMLCanvasElement);
   if (color) texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
   return texture;
-}
-
-function gradientCanvas(
-  width: number,
-  height: number,
-  paint: (ctx: CanvasRenderingContext2D) => void,
-) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  paint(canvas.getContext('2d')!);
-  return canvas;
 }
 
 export async function createDoorScene({
@@ -69,82 +106,85 @@ export async function createDoorScene({
   onFail,
   onLayout,
   onCue,
+  personal,
+  mode = 'cinematic',
+  palette = 'original',
+  tilt = true,
 }: Options) {
-  const loader = new THREE.TextureLoader();
-  const loaded = await Promise.allSettled([
-    loader.loadAsync(door.art),
-    loader.loadAsync(door.mask),
-  ]);
-  const textures: THREE.Texture[] = loaded.flatMap((result) =>
-    result.status === 'fulfilled' ? [result.value] : [],
+  const finishKind = door.finish ?? 'matte';
+  const rig = rigs[finishKind];
+  const cinematic = mode === 'cinematic';
+  const startRect = host.getBoundingClientRect();
+  const startW = Math.max(1, startRect.width || 390);
+  const startH = Math.max(1, startRect.height || 844);
+  const startPlane = ((4 * startH) / startW) * 1.025;
+  const surface = await buildSurface(
+    door,
+    personal ?? { initials: initialSeal.initials, seed: initialSeal.seed ?? initialSeal.initials },
+    paintedSize((LEAF_W * 2) / startPlane, startH),
+    signal,
   );
-  if (signal.aborted || loaded.some((result) => result.status === 'rejected')) {
-    textures.forEach((t) => t.dispose());
-    throw new Error('Door textures unavailable');
-  }
-  const [art, relief] = textures;
-  art.colorSpace = THREE.SRGBColorSpace;
-  let renderer: THREE.WebGLRenderer;
-  try {
-    renderer = new THREE.WebGLRenderer({
-      alpha: true,
-      antialias: true,
-      powerPreference: 'low-power',
-    });
-  } catch (error) {
-    textures.forEach((t) => t.dispose());
-    throw error;
-  }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+
+  const renderer = new THREE.WebGLRenderer({
+    alpha: true,
+    antialias: true,
+    powerPreference: 'low-power',
+  });
+  let pixelRatio = Math.min(devicePixelRatio, 2);
+  renderer.setPixelRatio(pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = rig.exposure * (palette === 'warm' ? 1.03 : 1);
   host.appendChild(renderer.domElement);
-  art.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 30);
-  camera.position.z = 9;
+  camera.position.z = CAMERA_Z;
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const room = new RoomEnvironment();
-  const environment = pmrem.fromScene(room, 0.04).texture;
+  // Mat kapı beyaz odayı yansıtır (özgün görünüm); koyu cilalar stüdyoyu.
+  const room = finishKind === 'matte' ? new RoomEnvironment() : null;
+  const studio = room ? null : studioScene(tint(door.light, palette).getStyle());
+  const environment = pmrem.fromScene(room ?? studio!.scene, 0.04).texture;
   pmrem.dispose();
-  room.dispose();
+  room?.dispose();
+  studio?.dispose();
 
   const materials: THREE.Material[] = [];
   const geometries: THREE.BufferGeometry[] = [];
-  function mesh(
-    geo: THREE.BufferGeometry,
-    mat: THREE.Material,
-    parent: THREE.Object3D,
-    x = 0,
-    y = 0,
-    z = 0,
-  ) {
-    if (!geometries.includes(geo)) geometries.push(geo);
-    if (!materials.includes(mat)) materials.push(mat);
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    parent.add(m);
-    return m;
-  }
-  scene.add(new THREE.HemisphereLight('#fff8e9', '#ab9270', 2.5));
-  const key = new THREE.DirectionalLight('#fff6e4', 2.6);
+  const textures: THREE.Texture[] = [];
+  const disposers: (() => void)[] = [];
+
+  scene.add(new THREE.HemisphereLight(rig.sky, rig.ground, rig.hemi));
+  const keyColor =
+    palette === 'warm' ? '#ffe7c7' : palette === 'cool' ? '#edf2ff' : '#fff6e4';
+  const key = new THREE.DirectionalLight(keyColor, rig.key);
   key.position.set(-3, 4, 6);
   scene.add(key);
-  const fill = new THREE.DirectionalLight('#fffaf0', 0.8);
+  const fill = new THREE.DirectionalLight('#fffaf0', rig.fill);
   fill.position.set(3, -2, 4);
   scene.add(fill);
+  const lightColor = tint(door.light, palette);
 
   /* Kanatlar */
   const doors = new THREE.Group();
   scene.add(doors);
   const hinges: THREE.Group[] = [];
-  const leafMaps: THREE.Texture[][] = [];
-  const body = new THREE.MeshStandardMaterial({
-    color: door.paper,
-    roughness: 0.85,
-  });
+  const faces: THREE.Mesh[] = [];
+  const baseUvs: Float32Array[] = [];
+  const maps = surfaceTextures(surface, renderer.capabilities.getMaxAnisotropy());
+  textures.push(...maps.all);
+  const relief = createReliefUniforms(door);
+  // Dalga, kapının ışığından daha doygun bir altınla yanar: ton eşleme
+  // parlak yerleri beyaza çekse de oymalarda altın kalır.
+  relief.uGlowColor.value
+    .copy(lightColor)
+    .lerp(new THREE.Color('#ffa21f'), 0.5)
+    .multiplyScalar(finishKind === 'matte' ? 0.45 : 1);
+  relief.uGild.value = finishKind === 'matte' ? 0.95 : 0.35;
+  const face = leafMaterial(door, surface, maps, relief, environment);
+  materials.push(face);
+  const body = new THREE.MeshStandardMaterial({ color: door.paper, roughness: 0.85 });
   // Kanat kenarı: kapının kendi metalinin gölgedeki tonu; kapalıyken
   // birleşim çizgisini parlatmaz, açılırken kalınlık hissi verir.
   const metal = new THREE.MeshStandardMaterial({
@@ -154,53 +194,31 @@ export async function createDoorScene({
     envMap: environment,
     envMapIntensity: 0.08,
   });
+  const kit: Kit = {
+    door,
+    environment,
+    hinges,
+    fixtures: new THREE.Group(),
+    geometries,
+    materials,
+    textures,
+  };
+  const see = Boolean(surface.alpha);
   for (let side = 0; side < 2; side++) {
     const direction = side === 0 ? 1 : -1;
     const hinge = new THREE.Group();
     hinge.position.x = -LEAF_W * direction;
     doors.add(hinge);
     hinges.push(hinge);
-    mesh(
-      new THREE.BoxGeometry(LEAF_W, 1, 0.12),
-      body,
-      hinge,
-      (LEAF_W / 2) * direction,
-      0,
-      -0.07,
-    );
-    const map = art.clone();
-    const bump = relief.clone();
-    for (const t of [map, bump]) {
-      t.wrapS = THREE.ClampToEdgeWrapping;
-      t.wrapT = THREE.ClampToEdgeWrapping;
-      t.needsUpdate = true;
-      textures.push(t);
-    }
-    leafMaps.push([map, bump]);
-    mesh(
-      new THREE.PlaneGeometry(LEAF_W, 1, 80, 160),
-      new THREE.MeshStandardMaterial({
-        map,
-        bumpMap: bump,
-        bumpScale: door.bump,
-        displacementMap: bump,
-        displacementScale: 0.022,
-        roughness: 0.78,
-      }),
-      hinge,
-      (LEAF_W / 2) * direction,
-      0,
-      0.015,
-    );
-    mesh(
-      new THREE.BoxGeometry(0.025, 1, 0.06),
-      metal,
-      hinge,
-      (LEAF_W - 0.01) * direction,
-      0,
-      0.025,
-    );
+    // Camlı kanatta gövde kutusu camın arkasını kapatmasın.
+    if (!see)
+      meshIn(kit, new THREE.BoxGeometry(LEAF_W, 1, 0.12), body, hinge, (LEAF_W / 2) * direction, 0, -0.07);
+    const plane = new THREE.PlaneGeometry(LEAF_W, 1, 80, 160);
+    baseUvs.push(plane.attributes.uv.array.slice() as Float32Array);
+    faces.push(meshIn(kit, plane, face, hinge, (LEAF_W / 2) * direction, 0, 0.015));
+    meshIn(kit, new THREE.BoxGeometry(0.025, 1, 0.06), metal, hinge, (LEAF_W - 0.01) * direction, 0, 0.025);
   }
+  if (!materials.includes(body)) materials.push(body);
 
   /* Mühür. Kapalıyken tek parça ve kapıların önünde durur; kırıldığı an
      iki yarıya geçer. Her yarı kendi kanadına bağlıdır ve onunla açılır.
@@ -211,10 +229,7 @@ export async function createDoorScene({
   const sealMeshes: THREE.Mesh[] = [];
   const shadowMeshes: THREE.Mesh[] = [];
   const sealGeometry = new THREE.PlaneGeometry(SEAL_WORLD, SEAL_WORLD);
-  const shadowGeometry = new THREE.PlaneGeometry(
-    SEAL_WORLD * 1.06,
-    SEAL_WORLD * 1.06,
-  );
+  const shadowGeometry = new THREE.PlaneGeometry(SEAL_WORLD * 1.06, SEAL_WORLD * 1.06);
   geometries.push(sealGeometry, shadowGeometry);
   for (let side = 0; side < 2; side++) {
     const direction = side === 0 ? 1 : -1;
@@ -234,7 +249,7 @@ export async function createDoorScene({
     sealMeshes.push(half);
     shadowMeshes.push(shadow);
   }
-  const fixtures = new THREE.Group();
+  const fixtures = kit.fixtures;
   scene.add(fixtures);
   const wholeSeal = new THREE.Group();
   fixtures.add(wholeSeal);
@@ -248,21 +263,22 @@ export async function createDoorScene({
   fixtures.add(crackGlow);
   let sealTextures: THREE.Texture[] = [];
   let sealMaterials: THREE.Material[] = [];
-  let wholeMaterial: THREE.MeshBasicMaterial;
-  let glowMaterial: THREE.MeshBasicMaterial;
+  let wholeMaterial!: THREE.MeshBasicMaterial;
+  let glowMaterial!: THREE.MeshBasicMaterial;
   let tone = initialWax;
+  let dirty = true;
   function applySeal(spec: SealSpec, wax: WaxTone) {
     tone = wax;
     sealTextures.forEach((t) => t.dispose());
     sealMaterials.forEach((m) => m.dispose());
-    const maps = buildSealMaps(spec, 384);
+    const sealMaps = buildSealMaps(spec, 384);
     const painted = (['whole', 'left', 'right'] as const).map((part) =>
-      canvasTexture(paintSeal(maps, wax, part, undefined, 0), true),
+      canvasTexture(paintSeal(sealMaps, wax, part, undefined, 0), true),
     );
     const shadows = (['whole', 'left', 'right'] as const).map((part) =>
-      canvasTexture(sealMaskCanvas(maps, part, maps.size / 42)),
+      canvasTexture(sealMaskCanvas(sealMaps, part, sealMaps.size / 42)),
     );
-    const glow = canvasTexture(crackGlowCanvas(maps));
+    const glow = canvasTexture(crackGlowCanvas(sealMaps));
     sealTextures = [...painted, ...shadows, glow];
     const [wholeLook, ...halfLooks] = painted.map(
       (map) =>
@@ -285,20 +301,14 @@ export async function createDoorScene({
         }),
     );
     glowMaterial = new THREE.MeshBasicMaterial({
-      color: door.light,
+      color: lightColor,
       alphaMap: glow,
       transparent: true,
       opacity: 0,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
-    sealMaterials = [
-      wholeLook,
-      ...halfLooks,
-      wholeShade,
-      ...halfShades,
-      glowMaterial,
-    ];
+    sealMaterials = [wholeLook, ...halfLooks, wholeShade, ...halfShades, glowMaterial];
     wholeMesh.material = wholeLook;
     wholeShadow.material = wholeShade;
     sealMeshes.forEach((m, i) => (m.material = halfLooks[i]));
@@ -307,204 +317,57 @@ export async function createDoorScene({
     dirty = true;
   }
 
-  /* Kapı aralığından sızan ışık. */
-  const seamCanvas = gradientCanvas(64, 4, (ctx) => {
-    const g = ctx.createLinearGradient(0, 0, 64, 0);
-    g.addColorStop(0, '#000');
-    g.addColorStop(0.5, '#fff');
-    g.addColorStop(1, '#000');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 64, 4);
-  });
-  const seamTexture = canvasTexture(seamCanvas);
-  textures.push(seamTexture);
+  /* Kapı aralığından sızan ışık; kanatlar açılırken huzmeye dönüşür. */
+  const seamAlpha = seamTexture();
+  textures.push(seamAlpha);
   const seamMaterial = new THREE.MeshBasicMaterial({
-    color: door.light,
-    alphaMap: seamTexture,
+    color: lightColor,
+    alphaMap: seamAlpha,
     transparent: true,
     opacity: 0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
-  const seam = mesh(new THREE.PlaneGeometry(0.14, 1), seamMaterial, fixtures, 0, 0, 0.08);
+  const seam = meshIn(kit, new THREE.PlaneGeometry(0.14, 1), seamMaterial, fixtures, 0, 0, 0.08);
 
-  /* Kabartma sapları boyunca ince ışık izleri (yalnızca Fildişi). */
-  const trails = new THREE.Group();
-  const trailMaterial = new THREE.MeshBasicMaterial({
-    color: door.light,
-    transparent: true,
-    opacity: 0,
-  });
-  if (door.trails) {
-    doors.add(trails);
-    for (const sign of [-1, 1]) {
-      const points = [
-        new THREE.Vector3(sign * 0.12, 0, 0.06),
-        new THREE.Vector3(sign * 1.28, 0.7, 0.06),
-        new THREE.Vector3(sign * 1.65, 2, 0.06),
-        new THREE.Vector3(sign * 0.75, 3, 0.06),
-      ];
-      mesh(
-        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, 0.008, 5, false),
-        trailMaterial,
-        trails,
-      );
-    }
+  /* Kanatların ardındaki ışık ve huzmedeki parçacıklar. */
+  const inner = createInnerGlow(`#${lightColor.getHexString()}`);
+  scene.add(inner.mesh);
+  inner.mesh.position.z = -0.45;
+  disposers.push(inner.dispose);
+  const particles = door.atmosphere
+    ? createParticles(door.atmosphere, `#${lightColor.getHexString()}`, cinematic ? 150 : 80, {
+        width: 3.4,
+        height: 9,
+        depth: 2.6,
+      })
+    : undefined;
+  if (particles) {
+    scene.add(particles.points);
+    disposers.push(particles.dispose);
   }
 
-  /* Tokmak (Konak). */
-  let knockerHolder: THREE.Group | undefined;
-  let knockerPivot: THREE.Group | undefined;
-  const brass = new THREE.MeshStandardMaterial({
-    color: '#c39a56',
-    metalness: 1,
-    roughness: 0.28,
-    envMap: environment,
-    envMapIntensity: 1.15,
-  });
-  if (door.knocker) {
-    const onRight = door.knocker.x >= 0.5;
-    knockerHolder = new THREE.Group();
-    hinges[onRight ? 1 : 0].add(knockerHolder);
-    const plate = mesh(
-      new THREE.CylinderGeometry(0.085, 0.095, 0.035, 40),
-      brass,
-      knockerHolder,
-      0,
-      0,
-      0.05,
-    );
-    plate.rotation.x = Math.PI / 2;
-    mesh(new THREE.SphereGeometry(0.035, 20, 12), brass, knockerHolder, 0, 0, 0.075);
-    knockerPivot = new THREE.Group();
-    knockerPivot.position.set(0, -0.03, 0.08);
-    knockerHolder.add(knockerPivot);
-    mesh(new THREE.TorusGeometry(0.19, 0.026, 20, 72), brass, knockerPivot, 0, -0.19, 0);
-    mesh(new THREE.SphereGeometry(0.036, 20, 12), brass, knockerPivot, 0, -0.38, 0.004);
-    const striker = mesh(
-      new THREE.CylinderGeometry(0.05, 0.055, 0.03, 32),
-      brass,
-      knockerHolder,
-      0,
-      -0.4,
-      0.05,
-    );
-    striker.rotation.x = Math.PI / 2;
-  }
-
-  /* İpek kurdele (İpek Bağ): kulplardan geçer, düğümünde mühür durur. */
-  const ribbon = new THREE.Group();
-  const ribbonParts: THREE.Mesh[] = [];
-  const handleHolders: THREE.Group[] = [];
-  let ribbonMaterial: THREE.MeshStandardMaterial | undefined;
-  const ribbonMaterials: THREE.Material[] = [];
-  const tails: THREE.Mesh[] = [];
-  if (door.ribbon) {
-    fixtures.add(ribbon);
-    const satin = gradientCanvas(64, 256, (ctx) => {
-      const g = ctx.createLinearGradient(0, 0, 64, 0);
-      g.addColorStop(0, door.ribbon!.shade);
-      g.addColorStop(0.22, door.ribbon!.color);
-      g.addColorStop(0.44, door.ribbon!.color);
-      g.addColorStop(0.52, '#f7ddd6');
-      g.addColorStop(0.6, door.ribbon!.color);
-      g.addColorStop(0.86, door.ribbon!.color);
-      g.addColorStop(1, door.ribbon!.shade);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, 64, 256);
-      ctx.globalAlpha = 0.07;
-      for (let y = 0; y < 256; y += 3) {
-        ctx.fillStyle = y % 6 ? '#000' : '#fff';
-        ctx.fillRect(0, y, 64, 1);
-      }
+  /* Takılan parçalar. */
+  const knocker = buildKnocker(kit);
+  const ribbon = buildRibbon(kit);
+  const handles = door.handles
+    ? buildHandles(kit, { color: door.metal, offset: 0.52, length: 1.05, radius: 0.03 })
+    : undefined;
+  const keyhole = surface.features.keyhole;
+  const keyFixture = keyhole ? buildKey(kit, keyhole) : undefined;
+  const glass = surface.features.glass
+    ? buildGlass(surface.features.glass, surface.width / surface.height, `#${lightColor.getHexString()}`)
+    : undefined;
+  const panes: THREE.Mesh[] = [];
+  if (glass) {
+    faces.forEach((leaf, side) => {
+      const pane = new THREE.Mesh(leaf.geometry, glass.material);
+      pane.position.copy(leaf.position);
+      pane.position.z = 0.003;
+      hinges[side].add(pane);
+      panes.push(pane);
     });
-    const satinTexture = canvasTexture(satin, true);
-    textures.push(satinTexture);
-    const tailCut = gradientCanvas(32, 128, (ctx) => {
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(32, 0);
-      ctx.lineTo(32, 128);
-      ctx.lineTo(16, 112);
-      ctx.lineTo(0, 128);
-      ctx.closePath();
-      ctx.fill();
-    });
-    const tailAlpha = canvasTexture(tailCut);
-    textures.push(tailAlpha);
-    ribbonMaterial = new THREE.MeshStandardMaterial({
-      map: satinTexture,
-      roughness: 0.46,
-      metalness: 0,
-      envMap: environment,
-      envMapIntensity: 0.18,
-      side: THREE.DoubleSide,
-      transparent: true,
-    });
-    const tailMaterial = ribbonMaterial.clone();
-    tailMaterial.alphaMap = tailAlpha;
-    materials.push(tailMaterial);
-    ribbonMaterials.push(ribbonMaterial, tailMaterial);
-    for (const sign of [-1, 1]) {
-      const band = mesh(
-        new THREE.PlaneGeometry(0.2, 1.62),
-        ribbonMaterial,
-        ribbon,
-        sign * 0.81,
-        0,
-        0.06,
-      );
-      band.rotation.z = Math.PI / 2;
-      ribbonParts.push(band);
-      const tail = mesh(
-        new THREE.PlaneGeometry(0.17, 1.05),
-        tailMaterial,
-        ribbon,
-        sign * 0.16,
-        -0.52,
-        0.07,
-      );
-      tail.rotation.z = sign * 0.26;
-      tails.push(tail);
-      ribbonParts.push(tail);
-    }
-    const knot = mesh(
-      new THREE.PlaneGeometry(0.34, 0.26),
-      ribbonMaterial,
-      ribbon,
-      0,
-      0,
-      0.075,
-    );
-    ribbonParts.push(knot);
-    const gold = new THREE.MeshStandardMaterial({
-      color: door.metal,
-      metalness: 1,
-      roughness: 0.25,
-      envMap: environment,
-      envMapIntensity: 1.1,
-    });
-    for (let side = 0; side < 2; side++) {
-      const direction = side === 0 ? 1 : -1;
-      const holder = new THREE.Group();
-      hinges[side].add(holder);
-      handleHolders.push(holder);
-      mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.5, 20), gold, holder, 0, 0, 0.1);
-      for (const end of [-1, 1]) {
-        mesh(new THREE.SphereGeometry(0.036, 18, 12), gold, holder, 0, end * 0.25, 0.1);
-        const post = mesh(
-          new THREE.CylinderGeometry(0.018, 0.018, 0.09, 12),
-          gold,
-          holder,
-          0,
-          end * 0.22,
-          0.06,
-        );
-        post.rotation.x = Math.PI / 2;
-      }
-      holder.userData.x = LEAF_W * direction - 0.62 * direction;
-    }
+    disposers.push(glass.dispose);
   }
 
   /* Balmumu kırıntıları. */
@@ -521,16 +384,27 @@ export async function createDoorScene({
     active = false,
     paused = false,
     destroyed = false,
-    dirty = true,
+    frozen = false,
     animating = 0,
-    sealWorldY = 0;
+    sealWorldY = 0,
+    fw = 1,
+    fh = 1;
   let timeline: gsap.core.Timeline | undefined;
   let openingElapsed = 0;
   let previousFrame = 0;
-  let pointerX = 0;
+  const pointer = { x: 0, y: 0 };
+  const tilted = { x: 0, y: 0, tx: 0, ty: 0, live: false };
   const sweep = { value: 0 };
   const hold = { value: 0 };
+  const push = { value: 0 };
   let holdTween: gsap.core.Tween | undefined;
+  let glintTimer = 0;
+  let glintCount = 0;
+  let glintTween: gsap.core.Timeline | undefined;
+  let clock = 0;
+  let slowFrames = 0;
+  let frameEma = 16;
+  let skip = false;
 
   function tween(target: object, vars: gsap.TweenVars) {
     animating += 1;
@@ -565,25 +439,28 @@ export async function createDoorScene({
     return { x: ((v.x + 1) / 2) * 100, y: ((1 - v.y) / 2) * 100 };
   }
 
+  const toPlaneY = (imageY: number) => (imageY - (1 - fh) / 2) / fh;
+  const toPlaneX = (imageX: number) => (imageX - (1 - fw) / 2) / fw;
+
   function layout() {
-    const imgW = (art.image as { width: number }).width;
-    const imgH = (art.image as { height: number }).height;
-    const imageAspect = imgW / imgH;
+    const imageAspect = surface.width / surface.height;
     const planeAspect = (LEAF_W * 2) / planeHeight;
-    let fw = 1,
-      fh = 1;
-    if (door.fit === 'cover') {
+    fw = 1;
+    fh = 1;
+    if (surface.fit === 'cover') {
       if (planeAspect < imageAspect) fw = planeAspect / imageAspect;
       else fh = imageAspect / planeAspect;
     }
-    leafMaps.forEach((pair, side) => {
-      for (const t of pair) {
-        t.repeat.set(fw / 2, fh);
-        t.offset.set(side === 0 ? 0.5 - fw / 2 : 0.5, (1 - fh) / 2);
-      }
+    // Her kanat görselin kendi yarısını gösterir (bütün haritalar aynı UV'yi kullanır).
+    faces.forEach((leaf, side) => {
+      const uv = leaf.geometry.attributes.uv as THREE.BufferAttribute;
+      const base = baseUvs[side];
+      const u0 = side === 0 ? 0.5 - fw / 2 : 0.5;
+      for (let i = 0; i < uv.count; i++)
+        uv.setXY(i, u0 + base[i * 2] * (fw / 2), (1 - fh) / 2 + base[i * 2 + 1] * fh);
+      uv.needsUpdate = true;
     });
-    const toPlaneY = (imageY: number) => (imageY - (1 - fh) / 2) / fh;
-    const toPlaneX = (imageX: number) => (imageX - (1 - fw) / 2) / fw;
+    relief.uUvScale.value.set((LEAF_W * 2) / (fw * planeHeight), 1 / fh);
     const scaleY = doors.scale.y;
     sealWorldY = (0.5 - toPlaneY(door.y)) * planeHeight;
     for (const holder of sealHolders) {
@@ -593,47 +470,41 @@ export async function createDoorScene({
     crackGlow.position.y = sealWorldY;
     wholeSeal.position.y = sealWorldY;
     seam.scale.y = planeHeight;
-    if (knockerHolder && door.knocker) {
-      const worldX = (toPlaneX(door.knocker.x) - 0.5) * LEAF_W * 2;
-      const onRight = door.knocker.x >= 0.5;
-      knockerHolder.position.set(
-        worldX - (onRight ? LEAF_W : -LEAF_W),
-        ((0.5 - toPlaneY(door.knocker.y)) * planeHeight) / scaleY,
-        0,
-      );
-      knockerHolder.scale.set(1, 1 / scaleY, 1);
-    }
-    if (door.ribbon) {
-      ribbon.position.y = sealWorldY;
-      handleHolders.forEach((holder) => {
-        holder.position.set(holder.userData.x as number, sealWorldY / scaleY, 0);
-        holder.scale.set(1, 1 / scaleY, 1);
-      });
-    }
+    inner.mesh.scale.set(4.4, planeHeight * 1.1, 1);
+    inner.mesh.position.y = sealWorldY * 0.5;
+    const l: Layout = { scaleY, planeHeight, sealWorldY, toPlaneX, toPlaneY };
+    knocker?.layout(l);
+    ribbon?.layout(l);
+    handles?.layout(l);
+    keyFixture?.layout(l);
     doors.updateMatrixWorld(true);
     fixtures.updateMatrixWorld(true);
     const unit = (width / 4) * SEAL_WORLD;
     const anchors: DoorAnchors = {
       seal: { ...screen(sealHolders[0]), size: unit },
     };
-    if (knockerPivot) {
-      const ring = new THREE.Object3D();
-      ring.position.set(0, -0.2, 0);
-      knockerPivot.add(ring);
-      anchors.knocker = { ...screen(ring), size: (width / 4) * 0.5 };
-      knockerPivot.remove(ring);
+    if (knocker) {
+      const { point, release } = knocker.ringPoint();
+      anchors.knocker = { ...screen(point), size: (width / 4) * 0.5 };
+      release();
     }
-    if (tails.length) {
-      const tip = new THREE.Object3D();
-      tip.position.set(0, -0.8, 0);
-      ribbon.add(tip);
-      ribbon.updateMatrixWorld(true);
-      anchors.ribbon = {
-        ...screen(tip),
-        width: (width / 4) * 0.7,
-        height: (width / 4) * 1.1,
-      };
-      ribbon.remove(tip);
+    if (ribbon) {
+      const { point, release } = ribbon.tipPoint();
+      anchors.ribbon = { ...screen(point), width: (width / 4) * 0.7, height: (width / 4) * 1.1 };
+      release();
+    }
+    if (keyFixture) {
+      const saved = keyFixture.pivot.rotation.z;
+      keyFixture.turn(0);
+      const base = keyFixture.along(0);
+      const tip = keyFixture.along(1);
+      doors.updateMatrixWorld(true);
+      const a = screen(base.point);
+      const b = screen(tip.point);
+      base.release();
+      tip.release();
+      keyFixture.pivot.rotation.z = saved;
+      anchors.key = { x: a.x, y: a.y, tipX: b.x, tipY: b.y, size: (width / 4) * 0.62 };
     }
     onLayout?.(anchors);
   }
@@ -647,10 +518,10 @@ export async function createDoorScene({
     planeHeight = viewHeight * 1.025;
     renderer.setSize(width, height);
     camera.aspect = width / height;
-    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(viewHeight / 18));
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(viewHeight / (CAMERA_Z * 2)));
     camera.updateProjectionMatrix();
     doors.scale.y = planeHeight;
-    trails.scale.y = 1 / viewHeight;
+    if (particles) particles.uniforms.uPixelRatio.value = renderer.getPixelRatio();
     layout();
     dirty = true;
     render();
@@ -659,23 +530,83 @@ export async function createDoorScene({
   const observer = new ResizeObserver(resize);
   observer.observe(host);
 
-  function frame() {
+  /* Beklerken ara ara kabartmalarda ince bir parıltı geçer. */
+  const waveDoor = hasWave(door) && Boolean(maps.glow);
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  function glint() {
+    if (!waveDoor || opening || active || paused || reduceMotion.matches) return;
+    glintTween?.kill();
+    glintTween = gsap
+      .timeline({
+        onUpdate: () => {
+          dirty = true;
+        },
+      })
+      .set(relief.uGlint, { value: -0.85 })
+      .to(relief.uGlintStrength, { value: finishKind === 'matte' ? 0.55 : 0.8, duration: 0.5 }, 0)
+      .to(relief.uGlint, { value: 0.85, duration: 2.1, ease: 'sine.inOut' }, 0)
+      .to(relief.uGlintStrength, { value: 0, duration: 0.6 }, 1.5);
+    glintCount += 1;
+  }
+
+  function frame(now: number) {
     if (destroyed || document.hidden || paused) return;
-    if (opening && timeline) {
-      const now = performance.now();
-      if (previousFrame) openingElapsed += (now - previousFrame) / 1000;
-      previousFrame = now;
+    const dt = previousFrame ? Math.min(0.1, (now - previousFrame) / 1000) : 1 / 60;
+    if (opening && timeline && !frozen) {
+      openingElapsed += dt;
       // Görünür geçen süreyle ilerle: yavaş GPU'da GSAP gecikme telafisi açılışı uzatmasın.
       timeline.totalTime(openingElapsed, false);
     }
-    key.position.x = -2.7 + pointerX * 1.4 + sweep.value * 3;
-    if (dirty || opening || animating) render();
+    previousFrame = now;
+    clock += dt;
+    if (waveDoor && !opening && !active) {
+      glintTimer += dt;
+      if (glintTimer > (glintCount ? 6.5 : 1.4) && glintCount < 7) {
+        glintTimer = 0;
+        glint();
+      }
+    }
+    // Işık parmağı ve telefonun eğimini yumuşakça izler.
+    tilted.x += (tilted.tx - tilted.x) * Math.min(1, dt * 6);
+    tilted.y += (tilted.ty - tilted.y) * Math.min(1, dt * 6);
+    const lx = -2.7 + pointer.x * 1.4 + tilted.x * 1.6 + sweep.value * 3;
+    const ly = 4 + pointer.y * 1.2 + tilted.y * 1.4;
+    if (Math.abs(key.position.x - lx) + Math.abs(key.position.y - ly) > 0.002) dirty = true;
+    key.position.set(lx, ly, 6);
+    if (glass?.update(dt)) dirty = true;
+    const glinting = Boolean(glintTween?.isActive());
+    const live = dirty || opening || animating > 0 || glinting;
+    if (!live) return;
+    // Parıltı yalnızca süs: saniyede 30 kare yeter, pil korunur.
+    skip = glinting && !opening && !animating && !dirty ? !skip : false;
+    if (skip) return;
+    if (particles) particles.uniforms.uTime.value = clock;
+    render();
+    // Yavaş cihazda çözünürlüğü kademeli düşür.
+    if (opening || animating > 0) {
+      frameEma = frameEma * 0.9 + dt * 1000 * 0.1;
+      slowFrames = frameEma > 30 ? slowFrames + 1 : 0;
+      if (slowFrames > 40 && pixelRatio > 1) {
+        pixelRatio = Math.max(1, pixelRatio - 0.35);
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(width, height);
+        if (particles) particles.uniforms.uPixelRatio.value = pixelRatio;
+        slowFrames = 0;
+      }
+    }
   }
-  const pointer = (event: PointerEvent) => {
+  const onPointer = (event: PointerEvent) => {
     if (paused || active) return;
     const rect = host.getBoundingClientRect();
-    pointerX = ((event.clientX - rect.left) / Math.max(1, width) - 0.5) * 2;
+    pointer.x = ((event.clientX - rect.left) / Math.max(1, width) - 0.5) * 2;
+    pointer.y = -((event.clientY - rect.top) / Math.max(1, height) - 0.5) * 2;
     dirty = true;
+  };
+  const onTilt = (event: DeviceOrientationEvent) => {
+    if (paused || active || event.gamma == null || event.beta == null) return;
+    tilted.live = true;
+    tilted.tx = Math.max(-1, Math.min(1, event.gamma / 28));
+    tilted.ty = Math.max(-1, Math.min(1, (event.beta - 50) / 28));
   };
 
   function spawnCrumbs() {
@@ -686,15 +617,11 @@ export async function createDoorScene({
       envMap: environment,
     });
     materials.push(material);
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 11; i++) {
       const crumb = new THREE.Mesh(crumbGeometry, material);
-      const t = (i / 8 - 0.5) * SEAL_WORLD * 0.72;
+      const t = (i / 10 - 0.5) * SEAL_WORLD * 0.72;
       crumb.position.set((Math.random() - 0.5) * 0.05, sealWorldY + t, 0.12);
-      crumb.scale.set(
-        0.6 + Math.random() * 0.8,
-        0.4 + Math.random() * 0.6,
-        0.35 + Math.random() * 0.4,
-      );
+      crumb.scale.set(0.6 + Math.random() * 0.8, 0.4 + Math.random() * 0.6, 0.35 + Math.random() * 0.4);
       crumb.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
       crumbs.add(crumb);
       const fall = 0.7 + Math.random() * 0.9;
@@ -710,22 +637,19 @@ export async function createDoorScene({
         y: crumb.rotation.y + Math.random() * 6,
         duration: 1.2,
       });
-      tween(crumb.scale, {
-        x: 0,
-        y: 0,
-        z: 0,
-        delay: 0.7 + Math.random() * 0.4,
-        duration: 0.35,
-      });
+      tween(crumb.scale, { x: 0, y: 0, z: 0, delay: 0.7 + Math.random() * 0.4, duration: 0.35 });
     }
   }
 
   function finish() {
     timeline?.kill();
+    glintTween?.kill();
     opening = false;
     active = true;
     doors.visible = false;
     fixtures.visible = false;
+    inner.mesh.visible = false;
+    if (particles) particles.points.visible = false;
     dirty = true;
     render();
     onComplete();
@@ -746,7 +670,8 @@ export async function createDoorScene({
     onFail();
   };
   renderer.domElement.addEventListener('webglcontextlost', lost);
-  window.addEventListener('pointermove', pointer, { passive: true });
+  window.addEventListener('pointermove', onPointer, { passive: true });
+  if (tilt) window.addEventListener('deviceorientation', onTilt, { passive: true });
   document.addEventListener('visibilitychange', visibility);
   resize();
   renderer.setAnimationLoop(frame);
@@ -774,6 +699,98 @@ export async function createDoorScene({
       .to(glowMaterial, { opacity: 0, duration: 0.9 }, at + 0.42);
   }
 
+  /** Açılış zaman çizelgesi; süre sonunda `finish`. */
+  function buildOpening() {
+    const tl = gsap.timeline({ paused: true, onComplete: finish });
+    let crackAt = 0;
+    if (keyFixture) {
+      // Anahtar son çeyreğini tamamlar, kilit dili "tak" diye çekilir.
+      tl.to(keyFixture.pivot.rotation, { z: Math.PI / 2, duration: 0.3, ease: 'power2.out' }, 0)
+        .to(keyFixture.pivot.position, { z: 0.05, duration: 0.08, yoyo: true, repeat: 1 }, 0.3)
+        .call(() => onCue?.('unlock'), [], 0.3);
+      crackAt = 0.45;
+    }
+    if (glass) {
+      // Kalan buğu çekilir, sıcak ışık camı doldurur.
+      tl.to(glass.uniforms.uFog, { value: 0, duration: 0.8, ease: 'sine.out' }, 0);
+      crackAt = 0.35;
+    }
+    crackInto(tl, crackAt);
+    let doorsAt = crackAt + (cinematic ? 0.95 : 0.7);
+    if (ribbon) {
+      doorsAt = 1.35;
+      ribbon.openInto(tl);
+    }
+    if (waveDoor) {
+      tl.set(relief.uWave, { value: 0 }, crackAt + 0.15)
+        .to(relief.uWaveStrength, { value: cinematic ? 1.25 : 0.9, duration: 0.35 }, crackAt + 0.15)
+        .to(relief.uWave, { value: 0.78, duration: 1.9, ease: 'sine.out' }, crackAt + 0.15)
+        .to(relief.uWaveStrength, { value: 0, duration: 0.9 }, crackAt + 1.35);
+    }
+    const doorTime = cinematic ? 3 : 2.3;
+    tl.call(() => onCue?.('doors'), [], doorsAt).to(sweep, { value: 1, duration: 1.6 }, crackAt + 0.25);
+    if (door.motion === 'slide') {
+      // Sürgülü kanatlar raylarında iki yana kayar.
+      tl.to(hinges[0].position, { x: -LEAF_W - 2.25, duration: doorTime * 0.85, ease: 'power2.inOut' }, doorsAt)
+        .to(hinges[1].position, { x: LEAF_W + 2.25, duration: doorTime * 0.85, ease: 'power2.inOut' }, doorsAt + 0.06);
+    } else {
+      tl.to(hinges[0].rotation, { y: -Math.PI * 0.55, duration: doorTime, ease: 'power1.inOut' }, doorsAt)
+        .to(hinges[1].rotation, { y: Math.PI * 0.55, duration: doorTime, ease: 'power1.inOut' }, doorsAt + 0.12);
+    }
+    // Aralıktan taşan ışık huzmeye dönüşür, sonra söner.
+    tl.to(seam.scale, { x: door.motion === 'slide' ? 9 : 5, duration: doorTime * 0.5, ease: 'power1.in' }, doorsAt)
+      .to(seamMaterial, { opacity: 0.24, duration: 0.4 }, doorsAt)
+      .to(seamMaterial, { opacity: 0, duration: 0.8 }, doorsAt + doorTime * 0.22)
+      .to(inner.material, { opacity: cinematic ? 0.5 : 0.36, duration: doorTime * 0.35 }, doorsAt + 0.1)
+      .to(inner.material, { opacity: 0, duration: doorTime * 0.4 }, doorsAt + doorTime * 0.42)
+      .to(sweep, { value: 0, duration: 1.4 }, doorsAt + 1.3);
+    if (glass) {
+      tl.to(glass.uniforms.uGlow, { value: 0.35, duration: 0.6 }, doorsAt - 0.4)
+        .to(glass.uniforms.uFade, { value: 1, duration: doorTime * 0.45 }, doorsAt + 0.3);
+    }
+    if (particles) {
+      tl.to(particles.uniforms.uOpacity, { value: 1, duration: 0.8 }, doorsAt + 0.1).to(
+        particles.uniforms.uOpacity,
+        { value: 0, duration: 0.9 },
+        doorsAt + doorTime - 0.7,
+      );
+    }
+    if (cinematic) {
+      // Kamera eşikten içeri süzülür.
+      tl.to(push, {
+        value: 1,
+        duration: doorTime + 0.2,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          camera.position.z = CAMERA_Z - push.value * 2.6;
+          camera.position.y = sealWorldY * 0.25 * push.value;
+        },
+      }, doorsAt + 0.15);
+    }
+    return tl;
+  }
+
+  function begin() {
+    holdTween?.kill();
+    glintTween?.kill();
+    relief.uGlintStrength.value = 0;
+    openingElapsed = 0;
+    previousFrame = performance.now();
+    timeline = buildOpening();
+  }
+
+  function eventToUv(clientX: number, clientY: number) {
+    const rect = host.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(faces, false)[0];
+    return hit?.uv ?? null;
+  }
+
   return {
     anchors: layout,
     /** Mühür atölyesi: rengi, amblemi ve harfleri canlı değiştirir. */
@@ -783,8 +800,8 @@ export async function createDoorScene({
       render();
     },
     knock(onImpact?: () => void) {
-      if (!knockerPivot || opening || active) return;
-      const pivot = knockerPivot;
+      if (!knocker || opening || active) return;
+      const pivot = knocker.pivot;
       const tl = gsap.timeline({
         onUpdate: () => {
           dirty = true;
@@ -804,15 +821,8 @@ export async function createDoorScene({
     },
     /** Kurdele gerginliği (0–1). */
     pull(progress: number) {
-      if (!tails.length || opening || active) return;
-      const p = Math.min(1, Math.max(0, progress));
-      tails.forEach((tail, i) => {
-        tail.position.y = -0.52 - p * 0.26;
-        tail.rotation.z = (i === 0 ? -1 : 1) * 0.26 * (1 - p * 0.6);
-      });
-      ribbonParts.forEach((part) => {
-        if (!tails.includes(part)) part.scale.y = 1 - p * 0.12;
-      });
+      if (!ribbon || opening || active) return;
+      ribbon.pull(progress);
       dirty = true;
       render();
     },
@@ -831,6 +841,62 @@ export async function createDoorScene({
         },
       });
     },
+    /** Anahtarın dönüşü (0–1); 1'de kilit açılmaya hazırdır. */
+    turnKey(progress: number) {
+      if (!keyFixture || opening || active) return;
+      keyFixture.turn(progress * 0.94);
+      glowMaterial.opacity = Math.max(0, progress - 0.6) * 0.5;
+      dirty = true;
+    },
+    /** Sürgülü kanatları zorlama (0–1): mühür gerilir, aralıktan ışık sızar. */
+    strain(progress: number) {
+      if (opening || active) return;
+      const p = Math.min(1, Math.max(0, progress));
+      const eased = 1 - (1 - p) ** 2;
+      hinges[0].position.x = -LEAF_W - eased * 0.05;
+      hinges[1].position.x = LEAF_W + eased * 0.05;
+      wholeSeal.scale.set(1 + eased * 0.035, 1 - eased * 0.012, 1);
+      wholeSeal.position.x = p > 0.7 ? (Math.random() - 0.5) * 0.008 : 0;
+      seamMaterial.opacity = eased * 0.34;
+      glowMaterial.opacity = Math.max(0, p - 0.45) * 0.6;
+      dirty = true;
+    },
+    /** Buğuyu siler; ekran koordinatı alır, silinen oranı döndürür. */
+    wipeAt(clientX: number, clientY: number) {
+      if (!glass || opening || active) return glass?.progress ?? 0;
+      const uv = eventToUv(clientX, clientY);
+      if (!uv) return glass.progress;
+      dirty = true;
+      return glass.wipe(uv.x, uv.y);
+    },
+    wipeEnd() {
+      glass?.wipe(0, 0, true);
+    },
+    /** Klavye/erişilebilirlik: buğuyu kendiliğinden siler. */
+    autoWipe() {
+      return new Promise<void>((resolve) => {
+        if (!glass || opening || active) return resolve();
+        const path = { t: 0 };
+        tween(path, {
+          t: 1,
+          duration: 1.1,
+          ease: 'sine.inOut',
+          onUpdate: () => {
+            const t = path.t;
+            const u = 0.18 + 0.64 * (0.5 + 0.5 * Math.sin(t * Math.PI * 5 - Math.PI / 2));
+            const v = 0.78 - t * 0.5;
+            glass.wipe(u, v);
+          },
+          onComplete: () => {
+            glass.wipe(0, 0, true);
+            resolve();
+          },
+        });
+      });
+    },
+    get wipeProgress() {
+      return glass?.progress ?? 0;
+    },
     open(instant = false) {
       if (active) return;
       if (instant) {
@@ -839,43 +905,11 @@ export async function createDoorScene({
       }
       if (opening) return;
       opening = true;
-      if (paused || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (paused || reduceMotion.matches) {
         finish();
         return;
       }
-      holdTween?.kill();
-      openingElapsed = 0;
-      previousFrame = performance.now();
-      timeline = gsap.timeline({ paused: true, onComplete: finish });
-      crackInto(timeline, 0);
-      let doorsAt = 0.95;
-      if (door.ribbon) {
-        doorsAt = 1.35;
-        ribbonParts.forEach((part, i) => {
-          const sign = part.position.x === 0 ? 0 : Math.sign(part.position.x);
-          timeline!
-            .to(part.position, {
-              x: part.position.x + sign * 1.4,
-              y: part.position.y - 2.2 - (i % 3) * 0.3,
-              duration: 1.1,
-              ease: 'power2.in',
-            }, 0.35)
-            .to(part.rotation, { z: part.rotation.z + sign * 0.9, duration: 1.1 }, 0.35);
-        });
-        timeline.to(ribbonMaterials, { opacity: 0, duration: 0.5 }, 0.95);
-      }
-      if (door.trails) {
-        timeline
-          .to(trailMaterial, { opacity: 0.8, duration: 0.6 }, 0.3)
-          .to(trailMaterial, { opacity: 0, duration: 0.6 }, 1.1);
-      }
-      timeline
-        .call(() => onCue?.('doors'), [], doorsAt)
-        .to(sweep, { value: 1, duration: 1.6 }, 0.25)
-        .to(hinges[0].rotation, { y: -Math.PI * 0.55, duration: 3, ease: 'power1.inOut' }, doorsAt)
-        .to(hinges[1].rotation, { y: Math.PI * 0.55, duration: 3, ease: 'power1.inOut' }, doorsAt + 0.12)
-        .to(seamMaterial, { opacity: 0, duration: 0.9 }, doorsAt + 0.5)
-        .to(sweep, { value: 0, duration: 1.4 }, doorsAt + 1.3);
+      begin();
     },
     pause(value: boolean) {
       paused = value;
@@ -888,13 +922,29 @@ export async function createDoorScene({
         renderer.setAnimationLoop(frame);
       }
     },
+    /** Önizleme ve testler için: açılışı belirli bir ana sarar ve dondurur. */
+    seek(seconds: number) {
+      if (active) return;
+      if (!opening) {
+        opening = true;
+        begin();
+      }
+      frozen = true;
+      openingElapsed = seconds;
+      timeline!.totalTime(Math.min(seconds, timeline!.totalDuration() - 0.001), false);
+      if (particles) particles.uniforms.uTime.value = seconds;
+      dirty = true;
+      render();
+    },
     dispose() {
       destroyed = true;
       timeline?.kill();
       holdTween?.kill();
-      gsap.killTweensOf([hold, sweep]);
+      glintTween?.kill();
+      gsap.killTweensOf([hold, sweep, push]);
       observer.disconnect();
-      window.removeEventListener('pointermove', pointer);
+      window.removeEventListener('pointermove', onPointer);
+      window.removeEventListener('deviceorientation', onTilt);
       document.removeEventListener('visibilitychange', visibility);
       renderer.domElement.removeEventListener('webglcontextlost', lost);
       renderer.setAnimationLoop(null);
@@ -903,6 +953,7 @@ export async function createDoorScene({
       sealMaterials.forEach((m) => m.dispose());
       textures.forEach((t) => t.dispose());
       sealTextures.forEach((t) => t.dispose());
+      disposers.forEach((d) => d());
       environment.dispose();
       renderer.dispose();
       renderer.domElement.remove();

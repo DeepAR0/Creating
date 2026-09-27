@@ -384,6 +384,13 @@
 .sealed-fallback[data-open='true'] .is-right {
   transform: rotateY(100deg);
 }
+/* Sürgülü kapılar yedekte de kayarak açılır. */
+.sealed-fallback[data-motion='slide'][data-open='true'] .is-left {
+  transform: translateX(-102%);
+}
+.sealed-fallback[data-motion='slide'][data-open='true'] .is-right {
+  transform: translateX(102%);
+}
 .door3d-world .sealed-fallback-seal {
   position: absolute;
   left: var(--seal-x, 50%);
@@ -395,6 +402,287 @@
   .door3d-world:not([data-open='true']) {
     display: none;
   }
+}
+
+/* Konuğun ses anahtarı: çift sesi açık bıraktıysa görünür. */
+.sealed-door-sound {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top, 0px));
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(var(--scrim) / 0.42);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.sealed-door-sound svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sealed-door-sound svg path:first-child {
+  fill: currentColor;
+  fill-opacity: 0.18;
+}
+.sealed-door-sound[aria-pressed='false'] {
+  opacity: 0.72;
+}
+.sealed-door-sound:focus-visible {
+  outline: 2px solid var(--door-light, #ffdc91);
+  outline-offset: 2px;
+}
+
+/* Anahtar: çevirme yönünü gösteren ince yay. */
+.sealed-hit-key {
+  border-radius: 50%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sealed-key-cue {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--door-light, #ffe7c2);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px var(--door-light, #ffe7c2));
+  opacity: 0;
+  animation: sealed-key-cue 2.6s ease-in-out 1.4s infinite;
+}
+.sealed-key-cue path:first-child {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: sealed-key-draw 2.6s ease-in-out 1.4s infinite;
+}
+@keyframes sealed-key-cue {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  70% {
+    opacity: 0.9;
+  }
+}
+@keyframes sealed-key-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  55%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+.sealed-hit-key:disabled .sealed-key-cue,
+.sealed-hit-key:disabled .sealed-key-cue path {
+  animation: none;
+  opacity: 0;
+}
+
+/* Sürgülü kanatlar: ortadan iki yana açılan ışık okları. */
+.sealed-hit-slide {
+  left: 0;
+  right: 0;
+  top: 24%;
+  width: auto;
+  height: 50%;
+  translate: none;
+  border-radius: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sealed-slide-cue {
+  position: absolute;
+  left: var(--seal-x, 50%);
+  top: calc((var(--seal-y, 50%) - 24%) * 2);
+  width: 0;
+  height: 0;
+}
+.sealed-slide-cue i {
+  position: absolute;
+  top: calc(var(--seal-px, 96px) * 0.72);
+  width: 34px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--door-light, #ffe2a6));
+  opacity: 0;
+  animation: sealed-slide 2.4s cubic-bezier(0.3, 0.6, 0.3, 1) 1.2s infinite;
+}
+.sealed-slide-cue i::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  width: 6px;
+  height: 6px;
+  border-top: 1px solid var(--door-light, #ffe2a6);
+  border-right: 1px solid var(--door-light, #ffe2a6);
+  rotate: 45deg;
+}
+.sealed-slide-cue i:first-child {
+  right: 14px;
+  scale: -1 1;
+  transform-origin: 100% 50%;
+}
+.sealed-slide-cue i:last-child {
+  left: 14px;
+}
+@keyframes sealed-slide {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  75%,
+  100% {
+    opacity: 0;
+    translate: 26px 0;
+  }
+}
+.sealed-slide-cue i:first-child {
+  animation-name: sealed-slide-left;
+}
+@keyframes sealed-slide-left {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  75%,
+  100% {
+    opacity: 0;
+    translate: -26px 0;
+  }
+}
+.sealed-hit-slide:disabled .sealed-slide-cue i {
+  animation: none;
+}
+
+/* Buğulu cam: tüm cam alanı silinebilir; parmak izi gibi süzülen ipucu. */
+.sealed-hit-wipe {
+  inset: 0;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  translate: none;
+  border-radius: 0;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sealed-hit-wipe:focus-visible {
+  outline-offset: -6px;
+}
+.sealed-wipe-cue {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0) 70%);
+  box-shadow: 0 0 18px 4px rgb(255 240 220 / 0.35);
+  opacity: 0;
+  animation: sealed-wipe 3.2s ease-in-out 1.2s infinite;
+}
+@keyframes sealed-wipe {
+  0% {
+    opacity: 0;
+    translate: -70px 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  35% {
+    translate: 60px 16px;
+  }
+  55% {
+    translate: -50px 34px;
+  }
+  75% {
+    opacity: 0.85;
+    translate: 60px 52px;
+  }
+  90%,
+  100% {
+    opacity: 0;
+    translate: 60px 52px;
+  }
+}
+.sealed-hit-wipe:disabled .sealed-wipe-cue {
+  animation: none;
+}
+.sealed-door[data-ritual='wipe'] .sealed-door-plaque,
+.sealed-door[data-ritual='wipe'] .sealed-door-caption {
+  pointer-events: none;
+}
+
+/* Kış Bahçesi: kapının önünde, camın dışında sessizce kar yağar. */
+.door3d-snow {
+  position: absolute;
+  inset: -20% 0 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.door3d-snow::before,
+.door3d-snow::after {
+  content: '';
+  position: absolute;
+  inset: -100% 0 0;
+  background-image:
+    radial-gradient(2px 2px at 12% 8%, #fff 60%, transparent 70%),
+    radial-gradient(1.5px 1.5px at 33% 22%, #fff 60%, transparent 70%),
+    radial-gradient(2.5px 2.5px at 58% 13%, #fffc 60%, transparent 70%),
+    radial-gradient(1.5px 1.5px at 81% 31%, #fff 60%, transparent 70%),
+    radial-gradient(2px 2px at 91% 6%, #fffd 60%, transparent 70%),
+    radial-gradient(1.5px 1.5px at 22% 41%, #fff 60%, transparent 70%),
+    radial-gradient(2px 2px at 67% 44%, #fffc 60%, transparent 70%),
+    radial-gradient(1.5px 1.5px at 44% 36%, #fff 60%, transparent 70%);
+  background-size: 100% 50%;
+  animation: door-snow 16s linear infinite;
+  opacity: 0.75;
+}
+.door3d-snow::after {
+  background-size: 140% 38%;
+  filter: blur(1px);
+  animation-duration: 11s;
+  opacity: 0.55;
+}
+@keyframes door-snow {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-4%, 50%, 0);
+  }
+}
+.door3d-world[data-open='true'] .door3d-snow {
+  display: none;
 }
 
 /* Mühürlü Kapılar koleksiyonu: davetiye içi renkler ve iç sahneler. */

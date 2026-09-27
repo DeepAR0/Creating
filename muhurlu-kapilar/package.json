@@ -1,8 +1,14 @@
 {
-  "name": "evet-fildisi-rolyef-export",
-  "version": "1.0.0",
+  "name": "evet-muhurlu-kapilar",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
     "gsap": "3.15.0",
     "react": "19.2.6",
@@ -13,6 +19,8 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@types/three": "0.186.0",
-    "typescript": "5.9.3"
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.1"
   }
 }

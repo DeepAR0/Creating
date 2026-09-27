@@ -17,6 +17,8 @@ import {
 
 type Props = {
   initials: string;
+  /** 3B kapıdaki mühürle aynı kenar için çiftin tohumu. */
+  seed?: string;
   theme: Theme;
   wax?: WaxId;
   emblem?: EmblemId;
@@ -41,6 +43,7 @@ function draw(target: HTMLCanvasElement | null, source: CanvasImageSource) {
 /** Yazılımla ışıklandırılmış 2D balmumu mühür. */
 export function WaxSeal({
   initials,
+  seed,
   theme,
   wax = 'tema',
   emblem = 'monogram',
@@ -62,7 +65,7 @@ export function WaxSeal({
     void ensureSealFont().then(() => {
       if (cancelled) return;
       const maps = buildSealMaps(
-        { initials, emblem, shape, seed: initials },
+        { initials, emblem, shape, seed: seed ?? initials },
         resolution,
       );
       const tone = resolveWax(wax, theme);
@@ -79,7 +82,7 @@ export function WaxSeal({
     return () => {
       cancelled = true;
     };
-  }, [initials, emblem, shape, wax, theme]);
+  }, [initials, seed, emblem, shape, wax, theme]);
   return (
     <span
       className={`wax-seal ${className}`}

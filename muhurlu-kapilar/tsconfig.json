@@ -8,10 +8,11 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["source/*"]
     }
   },
-  "include": ["source/**/*.ts", "source/**/*.tsx", "example/**/*.tsx"]
+  "include": ["source/**/*.ts", "source/**/*.tsx", "example/**/*.tsx", "demo/**/*.ts", "demo/**/*.tsx"]
 }
