@@ -149,7 +149,7 @@ def fresco(w: int, h: int, seed: int = 7, light=(0.5, 0.2), doves: bool = True,
         ai = ((ang + math.pi) / math.tau * 511).astype(int) % 512
         ray = (0.5 + 0.5 * np.cos(ang * rays + jitter[ai] * 5.0)) ** 5
         ray *= smoothstep(0.03, 0.14, r) * np.exp(-r * 2.0) * warm
-        sky = sky + C(255, 232, 180) * (ray * 0.26)[..., None]
+        sky = sky + C(255, 232, 180) * (ray * 0.26 * min(warm, 1.0))[..., None]
 
     # --- bulutlar: ışığın çevresinde halka + kenarlar; eşitlenmiş gürültü
     img = sky

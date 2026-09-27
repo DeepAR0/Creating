@@ -77,13 +77,26 @@
 
   var AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   var GUNLER = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-  U.tarih = function (d) {
+  /**
+   * Tarihi ETKİNLİĞİN saat diliminde parçalar (misafir yurt dışında olsa da saat doğru görünür).
+   * tz: IANA saat dilimi, ör. 'Europe/Istanbul'
+   */
+  U.tarih = function (d, tz) {
     var iki = function (n) { return (n < 10 ? '0' : '') + n; };
+    var g = { gun: d.getDate(), ay: d.getMonth() + 1, yil: d.getFullYear(), hg: d.getDay(), sa: d.getHours(), dk: d.getMinutes() };
+    try {
+      var f = new Intl.DateTimeFormat('en-US', { timeZone: tz || 'Europe/Istanbul', year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: 'numeric', minute: 'numeric', weekday: 'short', hourCycle: 'h23' }).formatToParts(d);
+      var p = {};
+      f.forEach(function (x) { p[x.type] = x.value; });
+      g = { gun: +p.day, ay: +p.month, yil: +p.year, sa: +p.hour % 24, dk: +p.minute,
+        hg: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday) };
+    } catch (e) { /* eski tarayıcı: yerel saat */ }
     return {
-      gun: d.getDate(), ay: AYLAR[d.getMonth()], ayNo: d.getMonth() + 1, yil: d.getFullYear(),
-      haftaGunu: GUNLER[d.getDay()], saat: iki(d.getHours()) + ':' + iki(d.getMinutes()),
-      kisa: iki(d.getDate()) + '.' + iki(d.getMonth() + 1) + '.' + d.getFullYear(),
-      uzun: d.getDate() + ' ' + AYLAR[d.getMonth()] + ' ' + d.getFullYear()
+      gun: g.gun, ay: AYLAR[g.ay - 1], ayNo: g.ay, yil: g.yil,
+      haftaGunu: GUNLER[g.hg], saat: iki(g.sa) + ':' + iki(g.dk),
+      kisa: iki(g.gun) + '.' + iki(g.ay) + '.' + g.yil,
+      uzun: g.gun + ' ' + AYLAR[g.ay - 1] + ' ' + g.yil
     };
   };
   U.romen = function (n) {
@@ -122,7 +135,8 @@
     cfg.metin = Object.assign({}, VARSAYILAN_METIN, cfg.metin || {});
     cfg._misafir = misafirAdi();
     cfg._tarih = cfg.tarih ? new Date(cfg.tarih) : null;
-    cfg._t = cfg._tarih ? U.tarih(cfg._tarih) : null;
+    cfg.saatDilimi = cfg.saatDilimi || 'Europe/Istanbul';
+    cfg._t = cfg._tarih ? U.tarih(cfg._tarih, cfg.saatDilimi) : null;
     cfg.program = cfg.program || [];
     cfg.hikaye = cfg.hikaye || [];
     cfg.lcv = cfg.lcv || {};

@@ -27,6 +27,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 img { max-width: 100%; }
+[hidden] { display: none !important; }
 button { font: inherit; color: inherit; }
 html:has(body.kilitli), body.kilitli { overflow: hidden; height: 100%; }
 body.kilitli .hikaye { visibility: hidden; }
@@ -64,9 +65,12 @@ body.kilitli .hikaye { visibility: hidden; }
 .zarf-sahne.zarf-gorun { opacity: 1; }
 .zarf-toz { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .zarf-kamera { position: relative; perspective: 1500px; perspective-origin: 50% 30%; will-change: transform; }
+/* Not: kutu bilerek preserve-3d DEĞİL. 3B bağlamda ters dönen kapağın düzlemi kartı menteşe
+   hattında keser ve tarayıcı kartı ikiye bölüp kılcal bir dikiş bırakır. Perspektif kutunun
+   kendisinde; katman sırası z-index ile yönetilir. */
 .zarf-kutu {
   position: relative; width: var(--zarf-w); height: var(--zarf-h);
-  transform-style: preserve-3d; transform-origin: 50% 50%;
+  transform-origin: 50% 50%; perspective: 1500px; perspective-origin: 50% 0%;
 }
 .zarf-gorun .zarf-kutu { animation: zarf-gelis 1.6s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes zarf-gelis {
@@ -75,20 +79,22 @@ body.kilitli .hikaye { visibility: hidden; }
 }
 .zarf-sahne:not(.zarf-aciliyor) .zarf-kutu { animation-fill-mode: both; }
 .zarf-golge {
-  position: absolute; left: 4%; right: 4%; top: 3%; bottom: -2%;
+  position: absolute; left: 4%; right: 4%; top: 3%; bottom: -2%; z-index: 0;
   background: rgba(0, 0, 0, .75); filter: blur(22px); border-radius: 6%;
-  transform: translate3d(0, 2.2%, -1px);
+  transform: translate3d(0, 2.2%, 0);
 }
-.zarf-ic { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+.zarf-ic { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; z-index: 1; }
 .zarf-ic img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .zarf-kart {
-  position: absolute; left: 5.5%; width: 89%; top: 3.2%; height: 88%;
+  position: absolute; left: 5.5%; width: 89%; top: 3.2%; height: 88%; z-index: 3;
   transform-origin: 50% 50%; will-change: transform;
   box-shadow: 0 -2px 18px rgba(0, 0, 0, .35);
 }
 .zarf-gl, .zarf-yedek { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.zarf-gl { will-change: transform; }
-.zarf-kapak { position: absolute; left: 0; top: 0; width: 100%; transform-origin: 50% 0; transform-style: preserve-3d; }
+.zarf-gl { will-change: transform; z-index: 4; }
+.zarf-yedek { z-index: 4; }
+.zarf-kapak { position: absolute; left: 0; top: 0; width: 100%; z-index: 5; transform-origin: 50% 0; transform-style: preserve-3d; }
+.zarf-kapak.kapak-arkada { z-index: 2; }   /* 90°'yi geçen kapak kartın arkasında kalır */
 .zarf-kapak-on, .zarf-kapak-arka {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
@@ -97,7 +103,7 @@ body.kilitli .hikaye { visibility: hidden; }
 .zarf-kapak-on { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25)); }
 
 .zarf-isim {
-  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: absolute; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; line-height: 1.05; pointer-events: none;
   color: #6b4a1c;
   text-shadow: 0 1px 0 rgba(255, 250, 235, .8), 0 -1px 0 rgba(90, 60, 20, .25);
@@ -106,7 +112,7 @@ body.kilitli .hikaye { visibility: hidden; }
 .zarf-isim-ad { font-family: var(--f-el); font-size: calc(var(--zarf-w) * .062); white-space: nowrap; max-width: 96%; overflow: hidden; text-overflow: ellipsis; }
 
 .zarf-muhur {
-  position: absolute; padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
+  position: absolute; z-index: 7; padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
   filter: drop-shadow(1px 5px 5px rgba(40, 0, 0, .45)) drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
   transition: transform .16s ease;
   -webkit-tap-highlight-color: transparent;
@@ -133,7 +139,7 @@ body.kilitli .hikaye { visibility: hidden; }
 .zarf-muhur.kirildi .muhur-sol { transform: translate3d(-42%, 120%, 0) rotate(-58deg); opacity: 0; }
 .zarf-muhur.kirildi .muhur-sag { transform: translate3d(46%, 140%, 0) rotate(47deg); opacity: 0; }
 .muhur-halka {
-  position: absolute; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  position: absolute; z-index: 8; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
   border: 1.5px solid rgba(246, 226, 164, .8); pointer-events: none;
   animation: halka 2.4s ease-out infinite; box-shadow: 0 0 18px rgba(246, 226, 164, .35);
 }
@@ -207,8 +213,10 @@ body.acildi .arayuz { opacity: 1; }
 .bildirim.goster { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------------------------------------------------------------- sahneler */
-.hikaye { position: relative; }
-.sahne { position: relative; }
+/* overflow-x: clip yatay taşmayı keser ama (hidden'ın aksine) kaydırma kabı oluşturmaz: sticky bozulmaz */
+.hikaye { position: relative; overflow-x: clip; }
+.sahne { position: relative; overflow-x: clip; }
+@supports not (overflow-x: clip) { html, body { overflow-x: hidden; } }
 .sahne-sabit { position: sticky; top: 0; height: calc(var(--vh) * 100); overflow: hidden; }
 .sahne-akis { position: relative; }
 [data-gorun] { opacity: 0; transform: translate3d(0, 40px, 0); transition: opacity 1s ease, transform 1.2s cubic-bezier(.2, .8, .2, 1); }
