@@ -1,0 +1,10 @@
+/* Projeye gömülü yazı tipleri (Latin + Türkçe alt kümesi). Lisans: SIL Open Font License 1.1 (OFL-*.txt) */
+@font-face { font-family: 'Cinzel'; src: url('cinzel.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
+/* Cinzel Decorative (RFN 'Cinzel') alt kümesi yeniden adlandırıldı */
+@font-face { font-family: 'Davetiye Suslu'; src: url('cinzel-decorative.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Pinyon Script'; src: url('pinyon-script.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url('cormorant-garamond.woff2') format('woff2'); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url('cormorant-garamond-italik.woff2') format('woff2'); font-weight: 300 700; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Grenze Gotisch'; src: url('grenze-gotisch.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+/* UnifrakturMaguntia (RFN) alt kümesi yeniden adlandırıldı. Yalnız rakam / süs harfi için: ğ, ş, İ, ı içermez */
+@font-face { font-family: 'Davetiye Fraktur'; src: url('unifraktur-maguntia.woff2') format('woff2'); font-weight: 400; font-display: swap; }

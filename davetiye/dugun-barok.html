@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ayşe &amp; Mehmet — Düğün Davetiyesi</title>
+  <meta name="description" content="Ayşe ile Mehmet'in düğününe davetlisiniz. 12 Haziran 2027, Lale Köşkü.">
+  <meta name="theme-color" content="#14060a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Ayşe &amp; Mehmet — Düğün Davetiyesi">
+  <meta property="og:description" content="12 Haziran 2027 · Lale Köşkü — Sizi de aramızda görmek isteriz.">
+  <!-- Yayında og:image mutlak adres olmalı (WhatsApp önizlemesi için) -->
+  <meta property="og:image" content="temalar/barok/gorsel/paylasim.jpg">
+  <link rel="preload" href="yazitipleri/pinyon-script.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="yazitipleri/cinzel.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="yazitipleri/yazitipleri.css">
+  <link rel="stylesheet" href="motor/davetiye.css">
+  <link rel="stylesheet" href="temalar/barok/tema.css">
+</head>
+<body>
+  <noscript><p style="padding:24px;text-align:center">Davetiyeyi görüntülemek için JavaScript'i etkinleştirin.</p></noscript>
+
+  <script>
+    /* ------------------------------------------------------------------
+     * DAVETİYE BİLGİLERİ — yalnızca bu bloğu düzenlemeniz yeterli.
+     * Misafire özel bağlantı: dugun-barok.html?kisi=Ayşe%20Hanım%20ve%20Ailesi
+     * ------------------------------------------------------------------ */
+    window.DAVETIYE = {
+      tema: 'barok',
+      tur: 'dugun',
+      baslik: 'Ayşe & Mehmet — Düğün Davetiyesi',
+      monogram: 'A&M',
+      gelin: { ad: 'Ayşe', soyad: 'Yılmaz', anne: 'Fatma', baba: 'Ahmet' },
+      damat: { ad: 'Mehmet', soyad: 'Kaya', anne: 'Zeynep', baba: 'Ali' },
+      tarih: '2027-06-12T19:00:00+03:00',
+      sureSaat: 6,
+      mekan: {
+        ad: 'Lale Köşkü',
+        adres: 'Sahil Yolu No: 12, Bebek / İstanbul',
+        koordinat: [41.0772, 29.0435]
+      },
+      hikaye: [
+        { yil: '2019', baslik: 'İlk Karşılaşma', metin: 'Bir sonbahar akşamı, deniz kenarında bir kitapçıda aynı kitaba uzandık.', sahne: 'deniz' },
+        { yil: '2022', baslik: 'İlk Yolculuk', metin: 'Kapadokya\'da gün doğarken balonların arasında geleceğimizi hayal ettik.', sahne: 'balon' },
+        { yil: '2025', baslik: '“Evet” Dediğimiz Gece', metin: 'Yıldızların altında sorulan tek bir soru, bir ömrün cevabı oldu.', sahne: 'gece' }
+      ],
+      davetMetni: 'Hayatımızın en mutlu gününde, bu sevinci sizinle paylaşmak ve sizi de aramızda görmek isteriz.',
+      program: [
+        { saat: '19:00', baslik: 'Karşılama', aciklama: 'Bahçede kokteyl ve canlı müzik', ikon: 'kadeh' },
+        { saat: '20:00', baslik: 'Nikâh Töreni', aciklama: 'Gül bahçesindeki çardakta', ikon: 'yuzuk' },
+        { saat: '21:00', baslik: 'Akşam Yemeği', aciklama: 'Kristal salonda', ikon: 'yemek' },
+        { saat: '22:30', baslik: 'İlk Dans ve Eğlence', aciklama: 'Gece yarısına kadar', ikon: 'muzik' }
+      ],
+      lcv: {
+        sonTarih: '15 Mayıs 2027',
+        whatsapp: '905551112233',
+        endpoint: '',          // kendi sunucunuz varsa: 'https://…/lcv'
+        enFazla: 6
+      },
+      muzik: { parca: 'kanon' },   // kendi dosyanız: { kaynak: 'muzik.mp3' }
+      kapanis: 'Sevgimizle, sizi bekliyoruz.',
+      metin: { zarfUst: 'DÜĞÜN DAVETİYESİ' }
+    };
+  </script>
+  <script src="motor/cekirdek.js"></script>
+  <script src="motor/muzik.js"></script>
+  <script src="motor/zarf.js"></script>
+  <script src="temalar/barok/tema.js"></script>
+  <script>Davetiye.baslat();</script>
+</body>
+</html>
