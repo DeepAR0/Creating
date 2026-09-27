@@ -118,8 +118,8 @@ Katalog sayfasındaki araç bu bağlantıyı üretir. Gotik temada el yazması h
   }
   ```
 
-Yanıt gönderen misafir sayfayı yeniden açtığında "yanıtınız alındı" durumunu görür
-(tarayıcıda saklanır).
+İkisi de boş bırakılırsa (demolardaki gibi) yanıt yalnızca misafirin tarayıcısında saklanır.
+Yanıt gönderen misafir sayfayı yeniden açtığında "yanıtınız alındı" durumunu görür.
 
 ## Siteye entegrasyon
 
