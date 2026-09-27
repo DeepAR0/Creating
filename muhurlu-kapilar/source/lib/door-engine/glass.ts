@@ -149,7 +149,7 @@ export function buildGlass(feature: GlassFeature, aspect: number, light: string)
       }
       const x = u * mw;
       const y = (1 - v) * mh;
-      const radius = mw * 0.085;
+      const radius = mw * 0.1;
       if (last) {
         const dx = x - last.x;
         const dy = y - last.y;

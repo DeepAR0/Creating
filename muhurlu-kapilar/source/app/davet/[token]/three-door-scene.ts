@@ -551,10 +551,11 @@ export async function createDoorScene({
 
   function frame(now: number) {
     if (destroyed || document.hidden || paused) return;
-    const dt = previousFrame ? Math.min(0.1, (now - previousFrame) / 1000) : 1 / 60;
+    const elapsed = previousFrame ? Math.max(0, (now - previousFrame) / 1000) : 0;
+    const dt = previousFrame ? Math.min(0.1, elapsed) : 1 / 60;
     if (opening && timeline && !frozen) {
-      openingElapsed += dt;
       // Görünür geçen süreyle ilerle: yavaş GPU'da GSAP gecikme telafisi açılışı uzatmasın.
+      openingElapsed += elapsed;
       timeline.totalTime(openingElapsed, false);
     }
     previousFrame = now;

@@ -40,6 +40,25 @@ function draw(target: HTMLCanvasElement | null, source: CanvasImageSource) {
   ctx.drawImage(source, 0, 0, target.width, target.height);
 }
 
+/** Çatlak ışığı: parlaklık saydamlığa çevrilir, altın tonla boyanır.
+    (Karışım kipine güvenmeden her zeminde yalnızca çatlak parlar.) */
+function drawGlow(target: HTMLCanvasElement | null, source: CanvasImageSource) {
+  if (!target) return;
+  const ctx = target.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return;
+  draw(target, source);
+  const image = ctx.getImageData(0, 0, target.width, target.height);
+  const d = image.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = d[i];
+    d[i] = 255;
+    d[i + 1] = 214 + (v / 255) * 30;
+    d[i + 2] = 140 + (v / 255) * 90;
+    d[i + 3] = v;
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
 /** Yazılımla ışıklandırılmış 2D balmumu mühür. */
 export function WaxSeal({
   initials,
@@ -76,7 +95,7 @@ export function WaxSeal({
       ];
       for (const [canvas, part] of parts)
         if (canvas) draw(canvas, paintSeal(maps, tone, part));
-      if (glow.current) draw(glow.current, crackGlowCanvas(maps));
+      if (glow.current) drawGlow(glow.current, crackGlowCanvas(maps));
       setReady(true);
     });
     return () => {

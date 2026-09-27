@@ -243,7 +243,7 @@ export function SlideRitual(props: RitualProps) {
 
 /* Buğulu cam: parmağınızla silin; ışıklar göründükçe kapı hazırlanır. */
 export function WipeRitual(props: RitualProps & { threshold?: number }) {
-  const { engine, disabled, label, onReveal, onProgress, sounds, threshold = 0.3 } = props;
+  const { engine, disabled, label, onReveal, onProgress, sounds, threshold = 0.2 } = props;
   const last = useRef<{ x: number; y: number; t: number; moved: number } | null>(null);
   const done = useRef(false);
   const busy = useRef(false);

@@ -19,9 +19,10 @@
   width: 100%;
   height: 100%;
 }
-.door3d-world:is([data-fallback='true'], [data-loading='true']):not(
-    [data-open='true']
-  ) {
+/* Yüklenirken kapı görseli arka planda durur. Yedek kapıda görseli
+   kanatlar taşır; arka plan kalırsa kanatlar açılınca ardında yine aynı
+   kapı görünür ve açılış fark edilmez. */
+.door3d-world[data-loading='true']:not([data-fallback='true']):not([data-open='true']) {
   background: var(--door-art, url('/rolyef-door.webp')) center /
     var(--door-bg-size, 100% 100%) no-repeat;
 }
