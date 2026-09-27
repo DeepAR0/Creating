@@ -145,8 +145,10 @@ export function SealedDoor({
     setBroken(false);
     setKnocks(0);
     setProgress(0);
-    const fail = () => {
+    const fail = (error?: unknown) => {
       if (controller.signal.aborted) return;
+      // Konuk bir şey fark etmez (CSS kapı açılır); geliştirici nedenini görsün.
+      if (error) console.warn('[mühürlü kapı] 3B kapı kurulamadı, CSS yedeğine geçildi:', error);
       toFallback();
       if (started.current) props.current.onComplete();
     };
@@ -159,10 +161,23 @@ export function SealedDoor({
     const timeout = window.setTimeout(() => {
       if (!engine.current && !controller.signal.aborted) toFallback();
     }, LOAD_TIMEOUT_MS);
-    void import('@/lib/wax-seal')
-      .then(({ ensureSealFont }) => ensureSealFont())
-      .then(() => import('./three-door-scene'))
-      .then(async ({ createDoorScene }) => {
+    // Kapı yüzeyi (resim ya da çizim), 3B motor inerken paralel hazırlanır.
+    const fonts = import('@/lib/wax-seal').then(({ ensureSealFont }) => ensureSealFont());
+    const surface = fonts
+      .then(() => import('@/lib/door-engine/surface'))
+      .then(({ buildSurface, surfaceSize }) => {
+        if (controller.signal.aborted || !host.current) throw new DOMException('Aborted', 'AbortError');
+        const { door, sealSpec, date } = latest.current;
+        return buildSurface(
+          door,
+          { initials: sealSpec.initials, date, seed: sealSpec.seed },
+          surfaceSize(host.current.getBoundingClientRect()),
+          controller.signal,
+        );
+      });
+    surface.catch(() => undefined);
+    void Promise.all([import('./three-door-scene'), fonts])
+      .then(async ([{ createDoorScene }]) => {
         if (controller.signal.aborted || !host.current) return;
         const { door, sealSpec, wax, date, appearance } = latest.current;
         const scene = await createDoorScene({
@@ -171,6 +186,7 @@ export function SealedDoor({
           seal: sealSpec,
           wax,
           signal: controller.signal,
+          surface,
           personal: { initials: sealSpec.initials, date, seed: sealSpec.seed },
           mode: appearance.opening,
           palette: appearance.palette,

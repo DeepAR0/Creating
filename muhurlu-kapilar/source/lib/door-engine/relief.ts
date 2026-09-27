@@ -28,13 +28,19 @@ export function context2d(canvas: AnyCanvas) {
   return ctx;
 }
 
-/** Uzun hesaplar arasında ana iş parçacığını kısa süre serbest bırakır. */
+/** Uzun hesaplar arasında ana iş parçacığını kısa süre serbest bırakır.
+    Kare beklemez: dokunuşlar ve çizim araya girebilir, hesap hemen sürer. */
 export function yieldFrame(signal?: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    const done = () => (signal?.aborted ? reject(new DOMException('Aborted', 'AbortError')) : resolve());
-    if (typeof requestAnimationFrame === 'function' && !document.hidden) requestAnimationFrame(() => done());
-    else setTimeout(done, 0);
-  });
+  const check = () => {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  };
+  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (scheduler?.yield) return scheduler.yield().then(check);
+  return new Promise<void>((resolve) => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => resolve();
+    channel.port2.postMessage(0);
+  }).then(check);
 }
 
 export function hash(text: string) {
@@ -298,4 +304,41 @@ export function ridgeField(height: Field, w: number, h: number, bodyShare = 0.18
     out[i] = Math.min(1, Math.pow(edge, 0.85) * (1 - bodyShare) + height[i] * bodyShare);
   }
   return out;
+}
+
+/** Ham doku verisi (RGBA, satırlar alttan üste: WebGL sırası). Kanvas ve
+    getImageData maliyeti olmadan doğrudan DataTexture'a yüklenir. */
+export type MapData = { width: number; height: number; data: Uint8Array };
+
+export function packData(
+  w: number,
+  h: number,
+  channels: [Field | number, Field | number, Field | number, (Field | number)?],
+): MapData {
+  const data = new Uint8Array(w * h * 4);
+  for (let c = 0; c < 4; c++) {
+    const source = channels[c] ?? 1;
+    if (typeof source === 'number') {
+      const v = Math.round(clamp01(source) * 255);
+      for (let i = c; i < data.length; i += 4) data[i] = v;
+      continue;
+    }
+    for (let y = 0; y < h; y++) {
+      const from = y * w;
+      const to = (h - 1 - y) * w;
+      for (let x = 0; x < w; x++) {
+        const v = source[from + x];
+        data[(to + x) * 4 + c] = v <= 0 ? 0 : v >= 1 ? 255 : v * 255;
+      }
+    }
+  }
+  return { width: w, height: h, data };
+}
+
+/** Üstten alta RGBA pikselleri alttan üste veri olarak çevirir. */
+export function rgbaData(w: number, h: number, pixels: Uint8ClampedArray): MapData {
+  const data = new Uint8Array(w * h * 4);
+  const row = w * 4;
+  for (let y = 0; y < h; y++) data.set(pixels.subarray(y * row, y * row + row), (h - 1 - y) * row);
+  return { width: w, height: h, data };
 }

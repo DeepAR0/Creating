@@ -42,6 +42,38 @@ function whiplash(ctx: Ctx2D, from: Point, to: Point, bend: number, curl: number
   }
 }
 
+/** Demir çubukların yuvarlak profili. */
+function ironHeight(iron: Field, round: Field, wide: Field, detail: Field, embossed: Field) {
+  const out = new Float32Array(iron.length);
+  for (let i = 0; i < out.length; i++)
+    out[i] = 0.2 + iron[i] * (0.18 + Math.sqrt(round[i]) * 0.2 + wide[i] * 0.12) + detail[i] * 0.07 + embossed[i] * 0.05;
+  return out;
+}
+
+/** Camın düşük çözünürlüklü haritası (silme ilerlemesi için). */
+function paneMap(iron: Field, W: number, H: number) {
+  const pw = 40;
+  const ph = Math.max(40, Math.round((pw * H) / W));
+  const pane = new Float32Array(pw * ph);
+  for (let py = 0; py < ph; py++) {
+    for (let px = 0; px < pw; px++) {
+      let glass = 0;
+      let count = 0;
+      const x0 = Math.floor((px / pw) * W);
+      const x1 = Math.floor(((px + 1) / pw) * W);
+      const y0 = Math.floor((py / ph) * H);
+      const y1 = Math.floor(((py + 1) / ph) * H);
+      for (let y = y0; y < y1; y += 2)
+        for (let x = x0; x < x1; x += 2) {
+          glass += 1 - iron[y * W + x];
+          count++;
+        }
+      pane[py * pw + px] = count ? glass / count : 0;
+    }
+  }
+  return { width: pw, height: ph, data: pane };
+}
+
 /** Damla kalıbı: yarım küre normali (rg), parıltı (b), kenar (a). */
 function dropSprite(size: number) {
   const canvas = makeCanvas(size, size);
@@ -351,10 +383,7 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
   const round = blur(iron, W, H, u * 0.9);
   const wide = blur(iron, W, H, u * 2.8);
   const detailSoft = blur(detail, W, H, u * 0.45);
-  const height = new Float32Array(N);
-  for (let i = 0; i < N; i++) {
-    height[i] = 0.2 + iron[i] * (0.18 + Math.sqrt(round[i]) * 0.2 + wide[i] * 0.12) + detailSoft[i] * 0.07 + embossed[i] * 0.05;
-  }
+  const height = ironHeight(iron, round, wide, detailSoft, embossed);
   const ao = cavity(height, W, H, u * 3, 2.2);
   await yieldFrame(signal);
 
@@ -369,26 +398,32 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
   const data = image.data;
   const roughness = new Float32Array(N);
   const alpha = new Float32Array(N);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      const hammer = n(x * 0.08, y * 0.08) * 0.6 + n(x * 0.3, y * 0.3) * 0.4;
-      const t = 0.25 + hammer * 0.55 + (1 - round[i]) * 0.25;
-      const shade = 0.8 + 0.2 * ao[i];
-      const e = embossed[i];
-      const o = i * 4;
-      // Tarih ve harf kabartmaları eskitme bronz: demirin tek sıcak parıltısı.
-      const r = ironDark[0] + (ironWarm[0] - ironDark[0]) * t;
-      const gg = ironDark[1] + (ironWarm[1] - ironDark[1]) * t;
-      const b = ironDark[2] + (ironWarm[2] - ironDark[2]) * t;
-      data[o] = clamp01((r + (bronze[0] - r) * e) * shade) * 255;
-      data[o + 1] = clamp01((gg + (bronze[1] - gg) * e) * shade) * 255;
-      data[o + 2] = clamp01((b + (bronze[2] - b) * e) * shade) * 255;
-      data[o + 3] = 255;
-      roughness[i] = 0.42 + hammer * 0.2 - e * 0.12;
-      alpha[i] = iron[i];
+  // Sıcak döngü eşzamanlı bir işlevde: V8 onu ilk seferde de hızlı derler.
+  const shadeRows = (y0: number, y1: number) => {
+    for (let y = y0; y < y1; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        const hammer = n(x * 0.08, y * 0.08) * 0.6 + n(x * 0.3, y * 0.3) * 0.4;
+        const t = 0.25 + hammer * 0.55 + (1 - round[i]) * 0.25;
+        const shade = 0.8 + 0.2 * ao[i];
+        const e = embossed[i];
+        const o = i * 4;
+        // Tarih ve harf kabartmaları eskitme bronz: demirin tek sıcak parıltısı.
+        const r = ironDark[0] + (ironWarm[0] - ironDark[0]) * t;
+        const gg = ironDark[1] + (ironWarm[1] - ironDark[1]) * t;
+        const b = ironDark[2] + (ironWarm[2] - ironDark[2]) * t;
+        data[o] = clamp01((r + (bronze[0] - r) * e) * shade) * 255;
+        data[o + 1] = clamp01((gg + (bronze[1] - gg) * e) * shade) * 255;
+        data[o + 2] = clamp01((b + (bronze[2] - b) * e) * shade) * 255;
+        data[o + 3] = 255;
+        roughness[i] = 0.42 + hammer * 0.2 - e * 0.12;
+        alpha[i] = iron[i];
+      }
     }
-    if ((y & 127) === 0) await yieldFrame(signal);
+  };
+  for (let y = 0; y < H; y += 160) {
+    shadeRows(y, Math.min(H, y + 160));
+    await yieldFrame(signal);
   }
   actx.putImageData(image, 0, 0);
 
@@ -411,26 +446,7 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
     const y = rnd() * drops.height;
     dctx.drawImage(sprite, x - r, y - r * 1.08, r * 2, r * 2.16);
   }
-  // Silme ilerlemesi için camın düşük çözünürlüklü haritası.
-  const pw = 40;
-  const ph = Math.max(40, Math.round((pw * H) / W));
-  const pane = new Float32Array(pw * ph);
-  for (let py = 0; py < ph; py++) {
-    for (let px = 0; px < pw; px++) {
-      let glass = 0;
-      let count = 0;
-      const x0 = Math.floor((px / pw) * W);
-      const x1 = Math.floor(((px + 1) / pw) * W);
-      const y0 = Math.floor((py / ph) * H);
-      const y1 = Math.floor(((py + 1) / ph) * H);
-      for (let y = y0; y < y1; y += 2)
-        for (let x = x0; x < x1; x += 2) {
-          glass += 1 - iron[y * W + x];
-          count++;
-        }
-      pane[py * pw + px] = count ? glass / count : 0;
-    }
-  }
+  const pane = paneMap(iron, W, H);
   return {
     albedo,
     height,
@@ -440,7 +456,7 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
     alpha,
     normalStrength: 2.4,
     features: {
-      glass: { interior, interiorSoft, drops, pane: { width: pw, height: ph, data: pane } },
+      glass: { interior, interiorSoft, drops, pane },
     },
   };
 }

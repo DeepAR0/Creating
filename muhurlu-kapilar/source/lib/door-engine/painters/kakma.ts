@@ -1,5 +1,5 @@
 import { sealLetters } from '@/lib/wax-seal';
-import { blur, clamp01, drawField, hash, makeCanvas, context2d, yieldFrame, type Ctx2D } from '../relief';
+import { blur, clamp01, drawField, makeCanvas, context2d, yieldFrame, type Ctx2D } from '../relief';
 import type { PainterInput, PainterOutput } from '../surface';
 import {
   cavity,
@@ -11,9 +11,9 @@ import {
   roundRect,
   serifFamily,
   starPath,
+  sum,
   textAcrossSeam,
   wood,
-  type RGB,
 } from './kit';
 
 /* Sedef Kakma: ceviz kündekâri kanatlar. Ana panoda Selçuklu'nun sekiz
@@ -25,7 +25,12 @@ import {
 
 type Rect = { x: number; y: number; w: number; h: number };
 
-const tileHash = (i: number, j: number) => hash(`${i},${j}`);
+/** Karo başına tamsayı karması (piksel başına dize üretmeden). */
+const tileHash = (i: number, j: number) => {
+  let h = Math.imul(i, 73856093) ^ Math.imul(j, 19349663);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+};
 
 export async function paint({ width: W, height: H, personal, sealY, signal }: PainterInput): Promise<PainterOutput> {
   const N = W * H;
@@ -282,24 +287,22 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
   const ebony = minus(laths, pearl);
   await yieldFrame(signal);
 
-  /* Yükseklik */
-  const frameBevel = blur(frame, W, H, lw * 0.018);
+  /* Yükseklik: keskin katmanlar tek geçişte yumuşatılır; yıldızların
+     yastık kabarıklığı ayrı, geniş bir bulanıklıktan gelir. */
   const pillow = blur(starTiles, W, H, s * 0.1);
-  const lathSoft = blur(laths, W, H, 1.2);
-  const plateSoft = blur(silver, W, H, 2.5);
-  const height = new Float32Array(N);
-  for (let i = 0; i < N; i++) {
-    height[i] =
-      0.26 +
-      0.3 * frameBevel[i] +
-      0.08 * starTiles[i] +
-      0.07 * pillow[i] +
-      0.15 * lathSoft[i] -
-      0.012 * pearl[i] +
-      0.06 * raised[i] +
-      0.18 * plateSoft[i] -
-      0.3 * hole[i];
-  }
+  const sharp = sum(N, 0.26, [
+    [frame, 0.3],
+    [starTiles, 0.08],
+    [laths, 0.15],
+    [pearl, -0.012],
+    [raised, 0.06],
+    [silver, 0.18],
+    [hole, -0.3],
+  ]);
+  const height = sum(N, 0, [
+    [blur(sharp, W, H, Math.max(1.2, lw * 0.009)), 1],
+    [pillow, 0.07],
+  ]);
   await yieldFrame(signal);
   const ao = cavity(height, W, H, lw * 0.06, 2.6);
   await yieldFrame(signal);
@@ -331,82 +334,87 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
     [bottom1, H],
   ];
   const angles = [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4];
-  for (let y = 0; y < H; y++) {
-    const inRail = railBands.some(([a0, a1]) => y >= a0 && y < a1);
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      let base: RGB;
-      if (frame[i] > 0.5) {
-        // Kasa: dikmelerde dikey, kayıtlarda yatay damar.
-        const inStile = x < edge + stile || x > W - edge - stile || Math.abs(x - seamX) < seamStile;
-        const g = wood(n, x, y, inRail && !inStile ? 0 : Math.PI / 2, lw / 340);
-        base = lerp3(walnutDark, walnutMid, g);
-      } else if (y > main0 - 1 && y < main1 + 1) {
-        const fx = (x - seamX) / s;
-        const fy = (y - sealCY) / s;
-        const ci = Math.round(fx);
-        const cj = Math.round(fy);
-        const dx = Math.abs((fx - ci) * s);
-        const dy = Math.abs((fy - cj) * s);
-        const inStar = Math.max(dx, dy) <= a || dx + dy <= outer;
-        const h = inStar ? tileHash(ci, cj) : tileHash(Math.floor(fx) + 5000, Math.floor(fy) + 5000);
-        const g = wood(n, x + (h & 255), y + ((h >> 8) & 255), angles[h & 3], lw / 420);
-        base = inStar ? lerp3(walnutMid, walnutLight, g) : lerp3(crossDark, crossMid, g);
-      } else {
-        const g = wood(n, x, y, Math.PI / 2, lw / 380);
-        base = starTiles[i] > 0.5 ? lerp3(walnutMid, walnutLight, g) : lerp3(crossDark, crossMid, g * 0.9 + 0.1);
+  // Sıcak döngü eşzamanlı bir işlevde: V8 onu ilk seferde de hızlı derler.
+  const shadeRows = (y0: number, y1: number) => {
+    for (let y = y0; y < y1; y++) {
+      const inRail = railBands.some(([a0, a1]) => y >= a0 && y < a1);
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        let base: [number, number, number];
+        if (frame[i] > 0.5) {
+          // Kasa: dikmelerde dikey, kayıtlarda yatay damar.
+          const inStile = x < edge + stile || x > W - edge - stile || Math.abs(x - seamX) < seamStile;
+          const g = wood(n, x, y, inRail && !inStile ? 0 : Math.PI / 2, lw / 340);
+          base = lerp3(walnutDark, walnutMid, g);
+        } else if (y > main0 - 1 && y < main1 + 1) {
+          const fx = (x - seamX) / s;
+          const fy = (y - sealCY) / s;
+          const ci = Math.round(fx);
+          const cj = Math.round(fy);
+          const dx = Math.abs((fx - ci) * s);
+          const dy = Math.abs((fy - cj) * s);
+          const inStar = Math.max(dx, dy) <= a || dx + dy <= outer;
+          const h = inStar ? tileHash(ci, cj) : tileHash(Math.floor(fx) + 5000, Math.floor(fy) + 5000);
+          const g = wood(n, x + (h & 255), y + ((h >> 8) & 255), angles[h & 3], lw / 420);
+          base = inStar ? lerp3(walnutMid, walnutLight, g) : lerp3(crossDark, crossMid, g);
+        } else {
+          const g = wood(n, x, y, Math.PI / 2, lw / 380);
+          base = starTiles[i] > 0.5 ? lerp3(walnutMid, walnutLight, g) : lerp3(crossDark, crossMid, g * 0.9 + 0.1);
+        }
+        const p = pearl[i];
+        const e = ebony[i];
+        const sv = silver[i];
+        const hl = hole[i];
+        const bed = cartoucheBed[i] * (1 - p);
+        let r = base[0];
+        let gg = base[1];
+        let b = base[2];
+        if (bed > 0) {
+          r += (ebonyColor[0] - r) * bed * 0.85;
+          gg += (ebonyColor[1] - gg) * bed * 0.85;
+          b += (ebonyColor[2] - b) * bed * 0.85;
+        }
+        r += (ebonyColor[0] - r) * e;
+        gg += (ebonyColor[1] - gg) * e;
+        b += (ebonyColor[2] - b) * e;
+        if (p > 0.004) {
+          // Sedef: parça parça hafif pembe, yeşil, mavi yansımalar.
+          const t1 = tint(x / 26, y / 26);
+          const t2 = tint(x / 90 + 40, y / 90);
+          r += (pearlBase[0] - 0.035 + t1 * 0.05 - r) * p;
+          gg += (pearlBase[1] - 0.03 + t2 * 0.045 - gg) * p;
+          b += (pearlBase[2] - 0.05 + (1 - t1) * 0.07 - b) * p;
+        }
+        if (sv > 0.004) {
+          const brushed = 0.85 + n(x * 0.05, y * 0.05) * 0.25;
+          r += (silverColor[0] * brushed - r) * sv;
+          gg += (silverColor[1] * brushed - gg) * sv;
+          b += (silverColor[2] * brushed - b) * sv;
+        }
+        r += (holeColor[0] - r) * hl;
+        gg += (holeColor[1] - gg) * hl;
+        b += (holeColor[2] - b) * hl;
+        const shade = 0.78 + 0.22 * ao[i];
+        const o = i * 4;
+        data[o] = clamp01(r * shade) * 255;
+        data[o + 1] = clamp01(gg * shade) * 255;
+        data[o + 2] = clamp01(b * shade) * 255;
+        data[o + 3] = 255;
+        const woodRough = 0.5 - bed * 0.08;
+        let rough = woodRough + (0.42 - woodRough) * e;
+        rough += (0.17 - rough) * p;
+        rough += (0.26 - rough) * sv;
+        rough += (0.9 - rough) * hl;
+        roughness[i] = rough;
+        metalness[i] = sv * (1 - hl) * 0.78;
+        thickness[i] = p > 0.004 ? clamp01(0.15 + 0.85 * tint(x / 55 + 7, y / 55 - 3)) : 0.5;
+        glow[i] = p;
       }
-      // Sedef: parça parça hafif pembe, yeşil, mavi yansımalar.
-      const t1 = tint(x / 26, y / 26);
-      const t2 = tint(x / 90 + 40, y / 90);
-      const pearlColor: RGB = [
-        pearlBase[0] - 0.035 + t1 * 0.05,
-        pearlBase[1] - 0.03 + t2 * 0.045,
-        pearlBase[2] - 0.05 + (1 - t1) * 0.07,
-      ];
-      const p = pearl[i];
-      const e = ebony[i];
-      const sv = silver[i];
-      const hl = hole[i];
-      const bed = cartoucheBed[i] * (1 - p);
-      let r = base[0];
-      let gg = base[1];
-      let b = base[2];
-      if (bed > 0) {
-        r += (ebonyColor[0] - r) * bed * 0.85;
-        gg += (ebonyColor[1] - gg) * bed * 0.85;
-        b += (ebonyColor[2] - b) * bed * 0.85;
-      }
-      r += (ebonyColor[0] - r) * e;
-      gg += (ebonyColor[1] - gg) * e;
-      b += (ebonyColor[2] - b) * e;
-      r += (pearlColor[0] - r) * p;
-      gg += (pearlColor[1] - gg) * p;
-      b += (pearlColor[2] - b) * p;
-      const brushed = 0.85 + n(x * 0.05, y * 0.05) * 0.25;
-      r += (silverColor[0] * brushed - r) * sv;
-      gg += (silverColor[1] * brushed - gg) * sv;
-      b += (silverColor[2] * brushed - b) * sv;
-      r += (holeColor[0] - r) * hl;
-      gg += (holeColor[1] - gg) * hl;
-      b += (holeColor[2] - b) * hl;
-      const shade = 0.78 + 0.22 * ao[i];
-      const o = i * 4;
-      data[o] = clamp01(r * shade) * 255;
-      data[o + 1] = clamp01(gg * shade) * 255;
-      data[o + 2] = clamp01(b * shade) * 255;
-      data[o + 3] = 255;
-      const woodRough = 0.5 - bed * 0.08;
-      let rough = woodRough + (0.42 - woodRough) * e;
-      rough += (0.17 - rough) * p;
-      rough += (0.26 - rough) * sv;
-      rough += (0.9 - rough) * hl;
-      roughness[i] = rough;
-      metalness[i] = sv * (1 - hl) * 0.78;
-      thickness[i] = clamp01(0.15 + 0.85 * tint(x / 55 + 7, y / 55 - 3));
-      glow[i] = p;
     }
-    if ((y & 127) === 0) await yieldFrame(signal);
+  };
+  for (let y = 0; y < H; y += 160) {
+    shadeRows(y, Math.min(H, y + 160));
+    await yieldFrame(signal);
   }
   actx.putImageData(image, 0, 0);
   return {
@@ -415,7 +423,7 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
     roughness,
     metalness,
     ao,
-    glow: blur(glow, W, H, 1),
+    glow,
     iridescence: pearl,
     thickness,
     normalStrength: 3.2,

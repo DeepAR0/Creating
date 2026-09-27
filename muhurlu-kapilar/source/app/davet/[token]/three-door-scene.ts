@@ -10,7 +10,7 @@ import {
   type SealSpec,
   type WaxTone,
 } from '@/lib/wax-seal';
-import { buildSurface, paintedSize, type DoorPersonal } from '@/lib/door-engine/surface';
+import { buildSurface, surfaceSize, type DoorPersonal, type DoorSurface } from '@/lib/door-engine/surface';
 import { createReliefUniforms, leafMaterial, surfaceTextures } from '@/lib/door-engine/materials';
 import { createInnerGlow, createParticles, seamTexture, studioScene } from '@/lib/door-engine/effects';
 import {
@@ -66,6 +66,8 @@ type Options = {
   palette?: LightPalette;
   /** Telefon eğildikçe ışık kabartmalarda gezinsin (izin istemeden). */
   tilt?: boolean;
+  /** Önceden (3B motor inerken) hazırlanmış yüzey. */
+  surface?: Promise<DoorSurface>;
 };
 
 const SEAL_WORLD = 0.96;
@@ -110,20 +112,18 @@ export async function createDoorScene({
   mode = 'cinematic',
   palette = 'original',
   tilt = true,
+  surface: prepared,
 }: Options) {
   const finishKind = door.finish ?? 'matte';
   const rig = rigs[finishKind];
   const cinematic = mode === 'cinematic';
-  const startRect = host.getBoundingClientRect();
-  const startW = Math.max(1, startRect.width || 390);
-  const startH = Math.max(1, startRect.height || 844);
-  const startPlane = ((4 * startH) / startW) * 1.025;
-  const surface = await buildSurface(
-    door,
-    personal ?? { initials: initialSeal.initials, seed: initialSeal.seed ?? initialSeal.initials },
-    paintedSize((LEAF_W * 2) / startPlane, startH),
-    signal,
-  );
+  const surface = await (prepared ??
+    buildSurface(
+      door,
+      personal ?? { initials: initialSeal.initials, seed: initialSeal.seed ?? initialSeal.initials },
+      surfaceSize(host.getBoundingClientRect()),
+      signal,
+    ));
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
   const renderer = new THREE.WebGLRenderer({
@@ -921,6 +921,18 @@ export async function createDoorScene({
         dirty = true;
         renderer.setAnimationLoop(frame);
       }
+    },
+    /** Kapak pişirme ve atölye önizlemesi: mührü gizler, parıltıyı durdurur. */
+    setSealVisible(visible: boolean) {
+      if (opening || active) return;
+      wholeSeal.visible = visible;
+      if (!visible) {
+        glintTween?.kill();
+        relief.uGlintStrength.value = 0;
+        glintCount = 99;
+      }
+      dirty = true;
+      render();
     },
     /** Önizleme ve testler için: açılışı belirli bir ana sarar ve dondurur. */
     seek(seconds: number) {

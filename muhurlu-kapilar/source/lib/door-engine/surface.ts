@@ -2,14 +2,15 @@ import type { DoorConfig, DoorPainterId } from '@/lib/door-themes';
 import {
   type AnyCanvas,
   type Field,
+  type MapData,
   blur,
   context2d,
   loadImage,
   makeCanvas,
   normalsFromHeight,
-  packCanvas,
+  packData,
+  rgbaData,
   ridgeField,
-  rgbaCanvas,
   yieldFrame,
 } from './relief';
 
@@ -47,17 +48,17 @@ export type DoorSurface = {
   height: number;
   fit: 'stretch' | 'cover';
   albedo: TexImageSource | AnyCanvas;
-  normal?: AnyCanvas;
+  normal?: MapData;
   /** Düşük frekanslı yükseklik (kanat kıvrımı için). */
-  displacement?: AnyCanvas;
+  displacement?: MapData;
   /** R: ortam gölgesi, G: pürüzlülük, B: metallik. */
-  orm?: AnyCanvas;
+  orm?: MapData;
   /** R: ışık dalgasının gezindiği kabartma. */
-  glow?: AnyCanvas;
+  glow?: MapData;
   /** R: sedef maskesi, G: katman kalınlığı. */
-  iridescence?: AnyCanvas;
+  iridescence?: MapData;
   /** R: opaklık (cam delikleri için). */
-  alpha?: AnyCanvas;
+  alpha?: MapData;
   normalStrength: number;
   features: SurfaceFeatures;
 };
@@ -98,18 +99,56 @@ export async function loadPainter(id: DoorPainterId) {
   return (await painters[id]()).paint;
 }
 
-/** Çizimli kapının dokusu için boyut: ekran oranında, en fazla ~1.2 MP. */
+/** İki kanadın toplam genişliği (sahne birimi); kamera 4 birim görür. */
+export const DOOR_WIDTH = 4.06;
+
+/** Kapı düzleminin en/boy oranı: sahnenin kurduğu düzlemle aynı hesap. */
+export function doorAspect(width: number, height: number) {
+  const planeHeight = ((4 * Math.max(1, height)) / Math.max(1, width)) * 1.025;
+  return DOOR_WIDTH / planeHeight;
+}
+
+/** Ekran kutusu için doku boyutu (çizim 3B motordan önce başlayabilsin). */
+export function surfaceSize(rect: { width: number; height: number }) {
+  const width = rect.width || 390;
+  const height = rect.height || 844;
+  return paintedSize(doorAspect(width, height), height);
+}
+
+/** Çizimli kapının dokusu için boyut: ekran oranında, en fazla ~0.8 MP.
+    (Fildişi görseli 1024 × 1536; ışıklı normal haritası bu çözünürlükte
+    telefonda keskin kalır, çizim bir saniyenin altında biter.) */
 export function paintedSize(aspect: number, cssHeight: number) {
   const dpr = typeof devicePixelRatio === 'number' ? devicePixelRatio : 1;
-  let height = Math.round(Math.min(1600, Math.max(960, cssHeight * Math.min(dpr, 1.75))));
+  let height = Math.round(Math.min(1400, Math.max(960, cssHeight * Math.min(dpr, 1.6))));
   let width = Math.round(height * aspect);
-  const budget = 1_250_000;
+  const budget = 820_000;
   if (width * height > budget) {
     const k = Math.sqrt(budget / (width * height));
     width = Math.round(width * k);
     height = Math.round(height * k);
   }
   return { width, height };
+}
+
+/** Kanat kıvrımı için yüksekliğin kaba hâli: dörtte bir çözünürlükte
+    bulanıklaştırılır (ayrıntı normal haritasında; burada yalnızca biçim). */
+function lowPass(height: Field, w: number, h: number, divisor: number): MapData {
+  const k = 4;
+  const sw = Math.max(2, Math.floor(w / k));
+  const sh = Math.max(2, Math.floor(h / k));
+  const small = new Float32Array(sw * sh);
+  for (let y = 0; y < sh; y++)
+    for (let x = 0; x < sw; x++) {
+      let acc = 0;
+      for (let dy = 0; dy < k; dy++) {
+        const row = (y * k + dy) * w + x * k;
+        for (let dx = 0; dx < k; dx++) acc += height[row + dx];
+      }
+      small[y * sw + x] = acc / (k * k);
+    }
+  const low = blur(small, sw, sh, sw / divisor);
+  return packData(sw, sh, [low, 0, 0, 1]);
 }
 
 /** Kabartma maskesinden yükseklik: alfa taşıyorsa alfadan, yoksa parlaklıktan. */
@@ -163,14 +202,13 @@ async function imageSurface(door: DoorConfig, signal?: AbortSignal): Promise<Doo
   // Eğim, görselin çözünürlüğünden bağımsız aynı kabartma derinliğini versin;
   // tasarımın derinlik ayarı (`bump`) malzemenin normal ölçeğine uygulanır.
   const strength = (w / 480) * 2.4;
-  surface.normal = rgbaCanvas(w, h, normalsFromHeight(relief, w, h, strength));
+  surface.normal = rgbaData(w, h, normalsFromHeight(relief, w, h, strength));
   await yieldFrame(signal);
-  const low = blur(raw, w, h, w / 90);
-  surface.displacement = packCanvas(w, h, [low, low, low, 1]);
+  surface.displacement = lowPass(raw, w, h, 90);
   await yieldFrame(signal);
   // Işık dalgası oymaların sırtında dolaşır (Fildişi ışık çalışmasındaki gibi).
   const ridges = blur(ridgeField(relief, w, h), w, h, Math.max(0.8, w / 900));
-  surface.glow = packCanvas(w, h, [ridges, ridges, ridges, 1]);
+  surface.glow = packData(w, h, [ridges, 0, 0, 1]);
   return surface;
 }
 
@@ -188,24 +226,23 @@ async function paintedSurface(
   await yieldFrame(signal);
   const soft = blur(out.height, w, h, Math.max(0.8, w / 900));
   const strength = (out.normalStrength ?? 3) * (w / 700);
-  const normal = rgbaCanvas(w, h, normalsFromHeight(soft, w, h, strength));
+  const normal = rgbaData(w, h, normalsFromHeight(soft, w, h, strength));
   await yieldFrame(signal);
-  const low = blur(out.height, w, h, w / 80);
   const surface: DoorSurface = {
     width: w,
     height: h,
     fit: 'stretch',
     albedo: out.albedo,
     normal,
-    displacement: packCanvas(w, h, [low, low, low, 1]),
-    orm: packCanvas(w, h, [out.ao ?? 1, out.roughness, out.metalness, 1]),
+    displacement: lowPass(out.height, w, h, 80),
+    orm: packData(w, h, [out.ao ?? 1, out.roughness, out.metalness, 1]),
     normalStrength: 1,
     features: out.features ?? {},
   };
-  if (out.glow) surface.glow = packCanvas(w, h, [out.glow, out.glow, out.glow, 1]);
-  if (out.iridescence)
-    surface.iridescence = packCanvas(w, h, [out.iridescence, out.thickness ?? 0.5, 0, 1]);
-  if (out.alpha) surface.alpha = packCanvas(w, h, [out.alpha, out.alpha, out.alpha, 1]);
+  if (out.glow) surface.glow = packData(w, h, [out.glow, 0, 0, 1]);
+  if (out.iridescence) surface.iridescence = packData(w, h, [out.iridescence, out.thickness ?? 0.5, 0, 1]);
+  // Cam maskesi: alfa haritası yeşil kanalı okur.
+  if (out.alpha) surface.alpha = packData(w, h, [out.alpha, out.alpha, 0, 1]);
   return surface;
 }
 

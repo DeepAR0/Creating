@@ -10,6 +10,12 @@ import type { DoorTheme } from '@/lib/door-themes';
 document.documentElement.style.setProperty('--font-serif', '"Cormorant Garamond"');
 const params = new URLSearchParams(location.search);
 const theme = (params.get('tema') ?? 'rolyef') as DoorTheme;
+const bake = params.has('pisir');
+if (bake) {
+  const style = document.createElement('style');
+  style.textContent = '.sealed-door, .door3d-snow, .wax-seal { display: none !important; }';
+  document.head.append(style);
+}
 
 function Test() {
   const [opened, setOpened] = useState(false);
@@ -17,10 +23,10 @@ function Test() {
   return (
     <SealedDoor
       theme={theme}
-      name1="Selin"
-      name2="Arda"
+      name1={bake ? '' : 'Selin'}
+      name2={bake ? '' : 'Arda'}
       guest="Sevgili dostumuz"
-      date="12 · 06 · 2027"
+      date={bake ? undefined : '12 · 06 · 2027'}
       appearance={{ ...defaultAppearance, opening: (params.get('acilis') as 'gentle') ?? 'cinematic' }}
       open={false}
       paused={false}

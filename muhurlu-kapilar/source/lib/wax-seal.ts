@@ -650,11 +650,18 @@ export function crackGlowCanvas(maps: SealMaps) {
   return canvas;
 }
 
-export async function ensureSealFont() {
+/** Mühür yazısını bekler; ağ yavaşsa en fazla `timeout` ms. Süre dolarsa
+    mühür Georgia ile çizilir, kapı beklemez. */
+export async function ensureSealFont(timeout = 1800) {
   if (typeof document === 'undefined') return;
   try {
-    await document.fonts.load('600 64px "Cormorant Garamond"', 'SA&');
-    await document.fonts.load('italic 500 32px "Cormorant Garamond"', '&');
+    await Promise.race([
+      Promise.all([
+        document.fonts.load('600 64px "Cormorant Garamond"', 'SA&'),
+        document.fonts.load('italic 500 32px "Cormorant Garamond"', '&'),
+      ]),
+      new Promise((resolve) => setTimeout(resolve, timeout)),
+    ]);
   } catch {
     // Georgia ile devam edilir.
   }

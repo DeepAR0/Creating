@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { DoorConfig } from '@/lib/door-themes';
+import type { MapData } from './relief';
 import type { DoorSurface } from './surface';
 
 /* Kanat malzemeleri. Tümü Three.js'in standart/fiziksel malzemesidir;
@@ -103,11 +104,16 @@ export type SurfaceTextures = {
   all: THREE.Texture[];
 };
 
-function texture(source: DoorSurface['albedo'], color: boolean, anisotropy: number) {
-  const t =
-    source instanceof HTMLImageElement
-      ? new THREE.Texture(source)
-      : new THREE.CanvasTexture(source as HTMLCanvasElement);
+function texture(source: DoorSurface['albedo'] | MapData, color: boolean, anisotropy: number) {
+  let t: THREE.Texture;
+  if ('data' in source && source.data instanceof Uint8Array) {
+    // Ham veri: satırlar zaten alttan üste; çevirme yok.
+    t = new THREE.DataTexture(source.data, source.width, source.height, THREE.RGBAFormat);
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+  } else if (source instanceof HTMLImageElement) t = new THREE.Texture(source);
+  else t = new THREE.CanvasTexture(source as HTMLCanvasElement);
   t.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   t.wrapS = THREE.ClampToEdgeWrapping;
   t.wrapT = THREE.ClampToEdgeWrapping;

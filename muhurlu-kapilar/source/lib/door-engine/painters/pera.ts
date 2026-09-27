@@ -1,7 +1,7 @@
 import { sealLetters } from '@/lib/wax-seal';
 import { blur, clamp01, context2d, drawField, makeCanvas, yieldFrame, type Ctx2D } from '../relief';
 import type { PainterInput, PainterOutput } from '../surface';
-import { cavity, noise2, rgb, roundRect, serifFamily, textAcrossSeam } from './kit';
+import { cavity, noise2, rgb, roundRect, serifFamily, sum, textAcrossSeam } from './kit';
 
 /* Pera Deco: 1920'lerin Pera'sında bir balo salonunun sürgülü kapıları.
    Piyano siyahı lake üzerinde fırçalanmış pirinç: mühürden doğan güneş
@@ -12,9 +12,11 @@ import { cavity, noise2, rgb, roundRect, serifFamily, textAcrossSeam } from './k
 async function decoFamily() {
   if (typeof document === 'undefined') return serifFamily();
   try {
+    if (document.fonts.check('400 64px "Poiret One"', 'SA'))
+      return '"Poiret One", "Cormorant Garamond", Georgia, serif';
     const faces = await Promise.race([
       document.fonts.load('400 64px "Poiret One"', 'SA&0123'),
-      new Promise<FontFace[]>((resolve) => setTimeout(() => resolve([]), 1200)),
+      new Promise<FontFace[]>((resolve) => setTimeout(() => resolve([]), 700)),
     ]);
     if (faces.length) return '"Poiret One", "Cormorant Garamond", Georgia, serif';
   } catch {
@@ -220,12 +222,16 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
   await yieldFrame(signal);
 
   /* Yükseklik: pirinç kakma hafifçe yüksekte, kenarları yumuşak. */
-  const brass = new Float32Array(N);
-  for (let i = 0; i < N; i++) brass[i] = Math.min(1, brassLines[i] + brassFill[i]);
+  const brass = sum(N, 0, [
+    [brassLines, 1],
+    [brassFill, 1],
+  ]).map((v) => Math.min(1, v));
   const brassSoft = blur(brass, W, H, 0.9);
   const plateSoft = blur(plates, W, H, u * 0.9);
-  const height = new Float32Array(N);
-  for (let i = 0; i < N; i++) height[i] = 0.3 + brassSoft[i] * 0.09 + plateSoft[i] * 0.12;
+  const height = sum(N, 0.3, [
+    [brassSoft, 0.09],
+    [plateSoft, 0.12],
+  ]);
   const ao = cavity(height, W, H, u * 2, 2);
   await yieldFrame(signal);
 
@@ -240,30 +246,38 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
   const data = image.data;
   const roughness = new Float32Array(N);
   const metalness = new Float32Array(N);
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      const b = brass[i];
-      // Işınlar boyunca fırçalanmış doku: merkeze göre açısal çizgiler.
-      const angle = Math.atan2(y - cy, x - seamX);
-      const brush = n(angle * 160, Math.hypot(x - seamX, y - cy) * 0.03) * 0.6 + n(x * 0.02, y * 1.2) * 0.4;
-      const depth = 0.08 + 0.05 * n(x * 0.004, y * 0.004);
-      const br = brassDeep[0] + (brassColor[0] - brassDeep[0]) * (0.55 + brush * 0.45);
-      const bg = brassDeep[1] + (brassColor[1] - brassDeep[1]) * (0.55 + brush * 0.45);
-      const bb = brassDeep[2] + (brassColor[2] - brassDeep[2]) * (0.55 + brush * 0.45);
-      const lr = lacquer[0] + depth * 0.05;
-      const lg = lacquer[1] + depth * 0.035;
-      const lb = lacquer[2] + depth * 0.03;
-      const shade = 0.85 + 0.15 * ao[i];
-      const o = i * 4;
-      data[o] = clamp01((lr + (br - lr) * b) * shade) * 255;
-      data[o + 1] = clamp01((lg + (bg - lg) * b) * shade) * 255;
-      data[o + 2] = clamp01((lb + (bb - lb) * b) * shade) * 255;
-      data[o + 3] = 255;
-      roughness[i] = 0.14 + (0.3 + brush * 0.12 - 0.14) * b;
-      metalness[i] = b;
+  // Sıcak döngü eşzamanlı bir işlevde: V8 onu ilk seferde de hızlı derler.
+  const shadeRows = (y0: number, y1: number) => {
+    for (let y = y0; y < y1; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        const b = brass[i];
+        // Işınlar boyunca fırçalanmış doku: merkeze göre açısal çizgiler.
+        const brush =
+          b > 0.004
+            ? n(Math.atan2(y - cy, x - seamX) * 160, Math.hypot(x - seamX, y - cy) * 0.03) * 0.6 + n(x * 0.02, y * 1.2) * 0.4
+            : 0.5;
+        const depth = 0.08 + 0.05 * n(x * 0.004, y * 0.004);
+        const br = brassDeep[0] + (brassColor[0] - brassDeep[0]) * (0.55 + brush * 0.45);
+        const bg = brassDeep[1] + (brassColor[1] - brassDeep[1]) * (0.55 + brush * 0.45);
+        const bb = brassDeep[2] + (brassColor[2] - brassDeep[2]) * (0.55 + brush * 0.45);
+        const lr = lacquer[0] + depth * 0.05;
+        const lg = lacquer[1] + depth * 0.035;
+        const lb = lacquer[2] + depth * 0.03;
+        const shade = 0.85 + 0.15 * ao[i];
+        const o = i * 4;
+        data[o] = clamp01((lr + (br - lr) * b) * shade) * 255;
+        data[o + 1] = clamp01((lg + (bg - lg) * b) * shade) * 255;
+        data[o + 2] = clamp01((lb + (bb - lb) * b) * shade) * 255;
+        data[o + 3] = 255;
+        roughness[i] = 0.14 + (0.3 + brush * 0.12 - 0.14) * b;
+        metalness[i] = b;
+      }
     }
-    if ((y & 127) === 0) await yieldFrame(signal);
+  };
+  for (let y = 0; y < H; y += 160) {
+    shadeRows(y, Math.min(H, y + 160));
+    await yieldFrame(signal);
   }
   actx.putImageData(image, 0, 0);
   return {
@@ -272,7 +286,7 @@ export async function paint({ width: W, height: H, personal, sealY, signal }: Pa
     roughness,
     metalness,
     ao,
-    glow: blur(brassLines, W, H, 1.2),
+    glow: brassLines,
     normalStrength: 2.6,
   };
 }
