@@ -412,6 +412,87 @@ export function drawRoom(ctx: CanvasRenderingContext2D, g: TankGeom, x0: number,
     ctx.lineTo(wx + 8, wy - 10);
     ctx.fill();
   }
+  // Tankın üstünde geniş duvar varsa (tablet): raf, saksılar, kitaplar ve tablolar.
+  // Tasarım 30 birim yüksekliğe göre yapılır ve boş duvar alanına ölçeklenir.
+  const topSpace = -y0 - 2.4;
+  if (topSpace > g.H * 0.3) {
+    const k = topSpace / 38;
+    const cx = (x0 + x1) / 2;
+    const halfW = (x1 - x0) / 2 / k;
+    ctx.save();
+    ctx.translate(cx, -2.4 - topSpace * 0.27);
+    ctx.scale(k, k);
+    const sw = 60;
+    const sx = -sw / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(sx + 1, 1.4, sw, 1.2);
+    ctx.fillStyle = '#8a5a34';
+    ctx.fillRect(sx, 0, sw, 1.4);
+    ctx.fillStyle = '#6b4424';
+    ctx.fillRect(sx + 2, 1.4, 1, 3);
+    ctx.fillRect(sx + sw - 3, 1.4, 1, 3);
+    const books = ['#b45309', '#1d4ed8', '#047857', '#be123c', '#a16207', '#6d28d9'];
+    let bx = sx + sw * 0.08;
+    books.forEach((c, i) => {
+      const bh = 5 + ((i * 7) % 4);
+      ctx.fillStyle = c;
+      ctx.fillRect(bx, -bh, 1.6, bh);
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(bx + 0.3, -bh + 1, 1, 0.3);
+      bx += 1.8;
+    });
+    const pot = (px: number, h: number, c: string) => {
+      ctx.fillStyle = '#c2703d';
+      ctx.beginPath();
+      ctx.moveTo(px - 2, -3.2);
+      ctx.lineTo(px + 2, -3.2);
+      ctx.lineTo(px + 1.5, 0);
+      ctx.lineTo(px - 1.5, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = c;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(px + (i - 2) * 0.9, -3.2 - h * (0.4 + (i % 2) * 0.3), 0.9, h * 0.35, (i - 2) * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+    pot(sx + sw * 0.55, 4, '#3f7d34');
+    pot(sx + sw * 0.72, 6, '#4d8f3f');
+    const fx = sx + sw * 0.88;
+    ctx.fillStyle = 'rgba(120,200,230,0.55)';
+    ctx.beginPath();
+    ctx.arc(fx, -3, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 0.2;
+    ctx.stroke();
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.ellipse(fx, -3, 1, 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const frame = (fx2: number, fy: number, w: number, h: number, bg: string, fish: string) => {
+      ctx.fillStyle = '#c9a15a';
+      ctx.fillRect(fx2 - w / 2 - 0.8, fy - h / 2 - 0.8, w + 1.6, h + 1.6);
+      ctx.fillStyle = bg;
+      ctx.fillRect(fx2 - w / 2, fy - h / 2, w, h);
+      ctx.fillStyle = fish;
+      ctx.beginPath();
+      ctx.ellipse(fx2, fy, w * 0.22, h * 0.14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(fx2 - w * 0.2, fy);
+      ctx.lineTo(fx2 - w * 0.33, fy - h * 0.14);
+      ctx.lineTo(fx2 - w * 0.33, fy + h * 0.14);
+      ctx.fill();
+    };
+    const fxOff = Math.min(62, halfW - 9);
+    if (fxOff > sw / 2 + 8) {
+      frame(-fxOff, -2, 12, 9, '#9ad3e8', '#f97316');
+      frame(fxOff, -2.5, 10, 13, '#c7e9d8', '#2563eb');
+    }
+    ctx.restore();
+  }
   // Tank gölgesi duvarda
   const sh = ctx.createLinearGradient(0, -1, 0, g.H);
   sh.addColorStop(0, 'rgba(0,0,0,0.0)');

@@ -12,6 +12,7 @@ Yatay ekranda oynanan bir akvaryum simülasyonu. Balıkları besleyip büyütür
 - **Üreme:** Değerli türler belirli koşullarda ürer. Gerekenler: yetişkin erkek-dişi çift, yeterli mutluluk, su kalitesi ve sıcaklık, uygun yuva (mağara, geniş yaprak, yüzen bitki, deniz şakayığı vb.) ve tankta boş yer. Süreç kur → yumurta → yavru şeklinde ilerler ve yavruda nadir renk mutasyonu çıkabilir.
 - **Tank kademeleri:** Tatlı suda 20 L'den 1000 L'ye 6 kademe vardır. 12. seviyede ayrı bir resif (tuzlu su) akvaryumu açılır. Oyunda 18 bitki/mercan, 24 dekor ve 7 tema bulunur.
 - **Görevler:** Günde 3 görev ve bir bonus sandığı, 7 günlük giriş takvimi ve 14 başarım var.
+- **Öğretici:** Yeni oyuncuya 8 adımda besleme, balık inceleme, yosun temizleme, mağaza ve görevler gösterilir; tamamlayınca küçük bir ödül verilir.
 - **Gelir modeli:**
   - AdMob ödüllü reklamlar oyuncunun isteğine bağlıdır (bedava inci, x2 gelir, hızlandırma). Araya giren reklamlar seyrek ve sınırlıdır.
   - Uygulama içi satın almalar RevenueCat üzerinden yapılır: inci paketleri, Reklamları Kaldır, Başlangıç Paketi ve VIP aylık abonelik.
@@ -28,6 +29,23 @@ npm run build      # üretim derlemesi (dist/)
 
 Tarayıcı önizlemesinde reklamlar ve satın almalar **sahte** çalışır, böylece akışları test edebilirsiniz.
 
+```bash
+npm run balance -- --hours 110 --session 10 --gap 240 --feed 10   # denge simülasyonu (bot oyuncu)
+node scripts/store-shots.mjs                                     # App Store ekran görüntüleri (dev sunucusu açıkken)
+```
+
+`.github/workflows/aqua-haven.yml` her push'ta tip denetimi, test ve web derlemesi yapar. Ayrıca macOS üzerinde Xcode ile imzasız iOS simülatör derlemesi alır.
+
+### Denge (bot simülasyonu sonuçları)
+
+Günde ~6 kez 10 dakika oynayan, 10 dakikada bir besleyen ve otomatik yemlik alan bir oyuncu için:
+
+| Seviye | 5 | 10 | 15 | 20 | 25 | 30 | 50 |
+|---|---|---|---|---|---|---|---|
+| Gün | 1 | 3 | 8 | 16 | 26 | 41 | ~100 |
+
+Oyun hızını `src/game/balance.ts` içindeki `xpToNext`, satış ve büyüme sabitleriyle değiştirebilirsiniz.
+
 ## App Store'a yayınlama (adım adım)
 
 **Gerekenler:** Mac + Xcode 16 veya üzeri, Apple Developer Program üyeliği (yıllık 99 $), AdMob hesabı ve RevenueCat hesabı (ücretsiz başlar).
@@ -35,13 +53,13 @@ Tarayıcı önizlemesinde reklamlar ve satın almalar **sahte** çalışır, bö
 1. **Kimlikleri doldurun.**
    - `capacitor.config.ts` → `appId` alanına kendi Bundle ID'nizi yazın (örn. `com.sirketiniz.aquahaven`).
    - `src/config/app.ts` → destek e-postası, gizlilik politikası URL'si, AdMob kimlikleri, RevenueCat API anahtarı. Yayında `ADS.testing = false` yapın.
-   - `ios/App/App/Info.plist` → `GADApplicationIdentifier` değerine kendi AdMob uygulama kimliğinizi yazın. Google'ın güncel `SKAdNetworkItems` listesini de buraya ekleyin.
+   - `ios/App/App/Info.plist` → `GADApplicationIdentifier` değerine kendi AdMob uygulama kimliğinizi yazın. `SKAdNetworkItems` içinde Google'ın önerdiği 49 kimlik hazırdır (2024 sonu listesi). Yayından önce [Google'ın güncel listesiyle](https://developers.google.com/admob/ios/3p-skadnetworks) karşılaştırın.
 2. **Derleyip Xcode'u açın.**
    ```bash
    npm install
    npm run ios        # build + cap sync ios + Xcode'u açar
    ```
-   Xcode'da: App hedefi → *Signing & Capabilities* → Team seçin ve **In-App Purchase** yeteneğini ekleyin. `PrivacyInfo.xcprivacy`, `tr.lproj` ve `en.lproj` klasörlerini App hedefine sürükleyin. Önce gerçek bir cihazda test edin.
+   Xcode'da: App hedefi → *Signing & Capabilities* → Team seçin ve **In-App Purchase** yeteneğini ekleyin. Gizlilik manifesti (`PrivacyInfo.xcprivacy`) ve Türkçe/İngilizce izin metinleri projeye zaten eklidir. Önce gerçek bir cihazda test edin.
 3. **App Store Connect'i hazırlayın.**
    - Yeni uygulama oluşturun (aynı Bundle ID). Kategori olarak *Games → Simulation* seçin.
    - **Uygulama İçi Satın Almalar:** `src/config/monetization.ts` dosyasındaki kimliklerle birebir ürün oluşturun:
@@ -51,7 +69,8 @@ Tarayıcı önizlemesinde reklamlar ve satın almalar **sahte** çalışır, bö
    - **RevenueCat:** Uygulamayı ekleyin, App Store Connect paylaşılan gizli anahtarını ve In-App Purchase anahtarını girin. `no_ads` ve `vip` adlı iki entitlement tanımlayın; ilgili ürünleri bu entitlement'lara bağlayın.
    - **Gizlilik:** `docs/gizlilik-politikasi.md` dosyasını bir web sayfasında yayınlayın ve URL'sini girin. App Privacy formunda şunları bildirin: Tanımlayıcılar (reklam, takip), Satın Alma Geçmişi (işlevsellik), Kullanım/Tanılama verileri (AdMob).
    - **Yaş derecelendirmesi:** Reklam ve uygulama içi satın alma içerir. Sürpriz Yumurta olasılıkları oyun içinde gösterilir (Apple kuralı 3.1.1).
-   - **Ekran görüntüleri:** 6.9"/6.7" iPhone ve 13" iPad, yatay. Tarayıcıda `?demo=fresh` ile hazır sahne açıp çekebilirsiniz.
+   - **Ekran görüntüleri:** `store-assets/screenshots/` klasöründe iPhone 6.9" ve iPad 13" için Türkçe ve İngilizce hazır görüntüler var.
+   - **Mağaza metinleri:** Ad, alt başlık, açıklama, anahtar kelimeler, inceleme notu ve ürün tablosu `docs/app-store-metinleri.md` dosyasında.
 4. **Gönderin.** Xcode'da *Product → Archive → Distribute App → App Store Connect*. Ardından TestFlight'ta deneyip incelemeye gönderin.
 
 ## Proje yapısı

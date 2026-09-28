@@ -17,7 +17,7 @@ import * as A from '../game/actions';
 import { activeTank, capacityUsed, findFish, isVip, tierDef } from '../game/state';
 import { computeEnv, tempRange } from '../game/sim/env';
 import { moodFor, timeToAdult, trait } from '../game/sim/fish';
-import { beautyScore, growPearlCost, pearlCoinRate, quickCleanCost, sellValue, tipCap, tipRatePerMin, waterChangeCost } from '../game/sim/economy';
+import { beautyScore, growPearlCost, pearlCoinRate, quickCleanCost, sellValue, tipCap, tipCapMinutes, tipRatePerMin, waterChangeCost } from '../game/sim/economy';
 import { breederSpeciesIn, checkBreeding, clutchProgress } from '../game/sim/breeding';
 import { achievementStatus, bonusReward, claimAchievement, claimBonus, claimQuest, claimableCount, rerollQuest, todaysLoginReward } from '../game/sim/quests';
 import { QUEST_TEMPLATES } from '../data/progression';
@@ -32,6 +32,7 @@ import { requestNotifications } from '../services/notify';
 import { openUrl } from '../services/platform';
 import { clearSave } from '../game/save';
 import { stageOf } from '../render/fishSprites';
+import { Tutorial } from './Tutorial';
 
 // ------------------------------------------------------------------ küçük bileşenler
 
@@ -166,7 +167,7 @@ function Tools() {
     <>
       <div class="col left">
         {items.map(([k, icon, label]) => (
-          <button class={`tbtn ${tool === k ? 'on' : ''}`} onClick={() => set(k)}>
+          <button class={`tbtn ${tool === k ? 'on' : ''}`} data-tut={`tool-${k}`} onClick={() => set(k)}>
             {icon}
             {t(label)}
             {k === 'feed' && <span class="cnt num">{foodLeft}</span>}
@@ -203,7 +204,7 @@ function Menus() {
   return (
     <div class="col right">
       {items.map(([k, icon, label, n]) => (
-        <button class="tbtn" onClick={() => openPanel(k)}>
+        <button class="tbtn" data-tut={`menu-${k}`} onClick={() => openPanel(k)}>
           {icon}
           {t(label)}
           {n > 0 && <span class="dot num">{n}</span>}
@@ -240,16 +241,52 @@ function Hint() {
   const g = getGame();
   const key: Partial<Record<typeof ui.tool, TKey>> = { feed: 'hint.feed', sponge: 'hint.sponge', vacuum: 'hint.vacuum', decor: 'hint.decor' };
   const k = key[ui.tool];
-  if (ui.tool === 'decor' && ui.decorSel) return null;
+  if (ui.tool === 'decor') return <div class="hint" style={{ bottom: 'calc(84px + var(--sab))' }}>{t(k!)}</div>;
   if (!k) return getScene().cam.canPan && g.state.playTime < 600 ? <div class="hint">{t('hint.pan')}</div> : null;
   return <div class="hint">{t(k)}</div>;
+}
+
+function DecorTray() {
+  const g = getGame();
+  const s = g.state;
+  const items = [
+    ...Object.entries(s.inv.decor).filter(([id, n]) => n > 0 && (getDecor(id).water === 'both' || getDecor(id).water === g.tank.type)).map(([id, n]) => ({ id, n, kind: 'decor' as const })),
+    ...Object.entries(s.inv.plants).filter(([id, n]) => n > 0 && getPlant(id).water === g.tank.type).map(([id, n]) => ({ id, n, kind: 'plant' as const })),
+  ];
+  const place = (it: (typeof items)[number]) => {
+    const scene = getScene();
+    const w = getWorld().geom;
+    const [x0, x1] = scene.cam.visibleX();
+    const x = Math.min(w.W - 3, Math.max(3, (Math.max(0, x0) + Math.min(w.W, x1)) / 2 + (Math.random() - 0.5) * 6));
+    const r = it.kind === 'decor' ? A.placeDecor(g, it.id, x, 0.55) : A.placePlant(g, it.id, x, 0.4);
+    if (act(r, 'splash').ok) setUI({ decorSel: r.value ?? null });
+  };
+  if (!items.length) {
+    return (
+      <div class="decorbar tray">
+        <span class="muted">{t('hint.decorEmpty')}</span>
+        <button class="btn blue" onClick={() => openPanel('shop', 'decor')}><I.Bag size={16} /> {t('menu.shop')}</button>
+      </div>
+    );
+  }
+  return (
+    <div class="decorbar tray">
+      {items.map((it) => (
+        <button class="trayitem" onClick={() => place(it)}>
+          <img src={it.kind === 'decor' ? decorThumb(it.id) : plantThumb(it.id)} />
+          <span class="num">×{it.n}</span>
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function DecorBar() {
   useUI();
   const g = getGame();
   const id = ui.decorSel;
-  if (ui.tool !== 'decor' || !id) return null;
+  if (ui.tool !== 'decor') return null;
+  if (!id) return <DecorTray />;
   return (
     <div class="decorbar">
       <button class="btn blue" onClick={() => act(A.flipItem(g, id))}><I.Flip size={16} /> {t('c.flip')}</button>
@@ -926,6 +963,9 @@ function StorePanel() {
           <div class="links"><a onClick={() => openUrl(APP.termsUrl)}>{t('set.terms')}</a><a onClick={() => openUrl(APP.privacyUrl)}>{t('set.policy')}</a></div></div>
           {isVip(s) ? <span class="ok">{t('store.activeUntil', { d: new Date(s.iap.vipUntil).toLocaleDateString() })}</span> : <button class="btn purple" disabled={busy} onClick={() => buy(PRODUCT_IDS.vip)}>{t('store.perMonth', { p: iap.price(PRODUCT_IDS.vip) })}</button>}
         </div>
+        <div class="item"><span style={{ fontSize: '28px' }}>🫙</span><div class="grow"><b>{t('store.tipCap')}</b><div class="muted">{t('hud.visitors')}: {Math.round(tipCapMinutes(s) / 60)} sa</div></div>
+          {s.tipCapBonus >= 5 ? <span class="ok">{t('c.max')}</span> : <button class="btn" onClick={() => { if (g.spend(0, 20 + s.tipCapBonus * 10)) { s.tipCapBonus++; audio.play('success'); refresh(); } else toast(t('err.pearls'), 'bad'); }}><Price pearls={20 + s.tipCapBonus * 10} /></button>}
+        </div>
         <div class="item"><I.Coin size={30} /><div class="grow"><b>{t('store.exchange')}</b><div class="muted">{t('store.exchangeDesc', { p: 10, c: fmt(Math.round(10 * rate)) })}</div></div><button class="btn" onClick={() => act(A.exchangePearls(g, 10), 'coin')}><Price pearls={10} /></button></div>
       </div>
       <div class="row" style={{ marginTop: '10px' }}>
@@ -1094,6 +1134,7 @@ export function App() {
       <FishCard />
       <Toasts />
       <Panel />
+      <Tutorial />
       <Overlays />
       <div class="rotate">{t('hud.rotate')}</div>
     </>

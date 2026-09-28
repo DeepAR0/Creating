@@ -52,7 +52,7 @@ export const BAL = {
   SELL_CURVE_POW: 1.4,
   HOT_MULT: 1.5,
   BRED_MULT: 1.2,
-  SELL_XP_MULT: 0.5,
+  SELL_XP_MULT: 0.25,
   TIP_RATE: 0.08, // güzellik puanı başına dakikada altın
   TIP_CAP_MIN: 180,
   VIP_TIP_CAP_MIN: 480,
@@ -70,7 +70,9 @@ export const BAL = {
 
 /** Bir sonraki seviye için gereken GP */
 export function xpToNext(level: number): number {
-  return Math.round(40 * Math.pow(level, 1.9));
+  // Erken seviyeler hızlı; 10. seviyeden sonra kademeli yavaşlama (uzun ömürlü ilerleme)
+  const late = 1 + Math.max(0, level - 10) * 0.1;
+  return Math.round(50 * Math.pow(level, 2.5) * late);
 }
 
 export const MAX_LEVEL = 50;

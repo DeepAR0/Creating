@@ -147,11 +147,6 @@ async function boot() {
   requestAnimationFrame(frame);
 
   if (summary && summary.seconds > 300) setUI({ welcome: summary });
-  if (!state.tutorial.done) {
-    toast(t('tut.0'), 'info');
-    setTimeout(() => toast(t('hint.feed'), 'info'), 2800);
-    state.tutorial.done = true;
-  }
 
   // Yerel platform
   if (isNative) {
@@ -185,6 +180,7 @@ async function boot() {
     iap.init(game).then(() => refresh());
   }, 1500);
   (window as unknown as { __game: Game }).__game = game;
+  if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __world: world });
 }
 
 boot();

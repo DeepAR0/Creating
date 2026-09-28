@@ -24,8 +24,12 @@ export class Camera {
     this.vw = vw;
     this.vh = vh;
     this.dpr = dpr;
-    this.scale = vh / (g.H * g.viewF);
     const usableW = vw - safeLeft - safeRight;
+    // Yüksekliğe göre sığdır; tablet gibi dik oranlı ekranlarda tankın daha çoğu görünsün diye biraz uzaklaş
+    const byH = vh / (g.H * g.viewF);
+    const byW = usableW / (g.W * 1.02);
+    const tall = vh / vw > 0.6;
+    this.scale = tall ? Math.min(byH, Math.max(byW, byH * 0.6)) : byH;
     const tankPx = g.W * this.scale;
     this.offY = vh * 0.545 - (g.H / 2) * this.scale;
     if (tankPx <= usableW * 0.98) {

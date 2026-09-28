@@ -1,0 +1,59 @@
+name: Aqua Haven
+
+on:
+  push:
+    paths:
+      - 'aqua-haven/**'
+      - '.github/workflows/aqua-haven.yml'
+  pull_request:
+    paths:
+      - 'aqua-haven/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: aqua-haven
+
+jobs:
+  web:
+    name: Tip denetimi, testler ve web derlemesi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: aqua-haven/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  ios:
+    name: iOS simülatör derlemesi (imzasız)
+    runs-on: macos-15
+    needs: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: aqua-haven/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Xcode sürümü
+        run: xcodebuild -version
+      - name: Derle
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tail -n 80
