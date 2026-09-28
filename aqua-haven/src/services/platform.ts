@@ -6,7 +6,8 @@ export const isIOS = platform === 'ios';
 
 /** Web önizlemesinde sahte satın alma/reklam kullanılsın mı? */
 export const mockServices =
-  !isNative && (import.meta.env.DEV || new URLSearchParams(location.search).has('mock'));
+  !isNative &&
+    (import.meta.env.DEV || import.meta.env.VITE_PREVIEW === '1' || new URLSearchParams(location.search).has('mock'));
 
 export function openUrl(url: string) {
   try {

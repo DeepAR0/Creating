@@ -25,7 +25,8 @@ import { fmt } from './game/util';
 
 async function boot() {
   const params = new URLSearchParams(location.search);
-  const demo = params.get('demo');
+  // #demo-fresh gibi bir çapa da kabul edilir: sorgu dizesi taşınmayan barındırmalar için
+  const demo = params.get('demo') ?? location.hash.match(/^#demo-(fresh|marine|nano)$/)?.[1] ?? null;
   const raw = demo ? null : await loadSave();
   const state = demo ? demoState(demo, deviceLang()) : migrate(raw, deviceLang());
   const game = new Game(state);
