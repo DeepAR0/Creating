@@ -12,6 +12,7 @@ import { computeEnv } from './sim/env';
 import { hasTrait, trait, xpMult } from './sim/fish';
 import { breedPearlCost, growPearlCost, pearlCoinRate, quickCleanCost, sellValue, waterChangeCost } from './sim/economy';
 import { startBreeding } from './sim/breeding';
+import { activeSeason, seasonDecorOnSale } from './sim/season';
 import { clamp, uid, weightedPick } from './util';
 
 export type ErrCode =
@@ -28,6 +29,7 @@ export type ErrCode =
   | 'max'
   | 'notReady'
   | 'exclusive'
+  | 'ended'
   | 'invalid';
 
 export interface Result<T = undefined> {
@@ -67,6 +69,30 @@ export function buySpecies(g: Game, spId: string, sex?: Sex): Result<FishState> 
   const fish = createFish(g.state, spId, g.lang(), { sex: sp.breed ? sex : undefined });
   tank.fish.push(fish);
   if (!g.state.discovered[spId]) g.state.discovered[spId] = Date.now();
+  g.state.stats.bought++;
+  g.progress('buyFish', 1);
+  g.emit('fishAdded', { tankId: tank.id, fish, source: 'buy' });
+  return ok(fish);
+}
+
+/** Etkinliğe özel renkte yavru: yalnızca etkinlik sürerken, normal fiyatın katına */
+export function seasonFishPrice(sp: SpeciesDef): number {
+  return Math.max(300, sp.price * 6);
+}
+
+export function buySeasonFish(g: Game, spId: string, variant: string, sex?: Sex): Result<FishState> {
+  const sp = getSpecies(spId);
+  const a = activeSeason();
+  if (!a || !a.def.fish.some((x) => x.sp === spId && x.variant === variant)) return fail('ended');
+  const tank = g.tank;
+  const err = canBuySpecies(g, sp, tank);
+  if (err) return fail(err);
+  const payErr = payFor(g, seasonFishPrice(sp), 0);
+  if (payErr) return fail(payErr);
+  const fish = createFish(g.state, spId, g.lang(), { sex: sp.breed ? sex : undefined, variant });
+  tank.fish.push(fish);
+  g.state.discovered[spId] ??= Date.now();
+  g.state.discovered[`${spId}:${variant}`] ??= Date.now();
   g.state.stats.bought++;
   g.progress('buyFish', 1);
   g.emit('fishAdded', { tankId: tank.id, fish, source: 'buy' });
@@ -278,6 +304,7 @@ export function buyItem(g: Game, itemId: 'medicine' | 'elixir' | 'mysteryEgg', n
 export function buyDecor(g: Game, defId: string): Result {
   const d = getDecor(defId);
   if (d.exclusive) return fail('exclusive');
+  if (!seasonDecorOnSale(d.season)) return fail('ended');
   if (d.level > g.state.player.level) return fail('level');
   if (d.water !== 'both' && d.water !== g.tank.type) return fail('water');
   const err = payFor(g, d.pearls ? 0 : d.price, d.pearls ?? 0);

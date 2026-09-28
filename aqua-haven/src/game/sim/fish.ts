@@ -3,6 +3,7 @@ import { getSpecies } from '../../data/species';
 import type { FishState, SpeciesDef, TankState } from '../types';
 import type { TankEnv } from './env';
 import type { SimHost } from './host';
+import { seasonBonus } from './season';
 import { clamp, chance, rand } from '../util';
 
 export type MoodKey =
@@ -107,7 +108,8 @@ export function growthRate(f: FishState, sp: SpeciesDef, t: TankState): number {
   const fast = 1 + trait(sp, 'fastGrow');
   const boost = f.boost && f.boost > 0 ? 1 + (f.boostAmt ?? 0) : 1;
   const sick = f.sick ? 0.5 : 1;
-  return (1 / sp.growTime) * sat * joy * hp * temp * fast * boost * sick;
+  const season = 1 + seasonBonus('growth');
+  return (1 / sp.growTime) * sat * joy * hp * temp * fast * boost * sick * season;
 }
 
 /** Yetişkinliğe tahmini kalan süre (ideal koşullarda) */
@@ -205,7 +207,7 @@ export function updateFish(host: SimHost, t: TankState, env: TankEnv, f: FishSta
 
 export function xpMult(host: SimHost, sp: SpeciesDef, env: TankEnv): number {
   const vip = host.state.iap.vipUntil > Date.now() ? 1 + BAL.VIP_XP : 1;
-  return (1 + trait(sp, 'xpBoost')) * (1 + env.aura) * vip;
+  return (1 + trait(sp, 'xpBoost')) * (1 + env.aura) * vip * (1 + seasonBonus('xp'));
 }
 
 /** Görev ve günlük ödüllerin seviye ölçeği */

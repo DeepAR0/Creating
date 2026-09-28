@@ -22,11 +22,16 @@ import { isNative } from './services/platform';
 import { getSpecies } from './data/species';
 import { demoState } from './dev/demo';
 import { fmt } from './game/util';
+import { setSeasonOverride } from './game/sim/season';
+import { getSeason } from './data/seasons';
+import { gameCenter } from './services/gamecenter';
 
 async function boot() {
   const params = new URLSearchParams(location.search);
-  // #demo-fresh gibi bir çapa da kabul edilir: sorgu dizesi taşınmayan barındırmalar için
-  const demo = params.get('demo') ?? location.hash.match(/^#demo-(fresh|marine|nano)$/)?.[1] ?? null;
+  // #demo-fresh / #event-halloween gibi çapalar da kabul edilir: sorgu dizesi taşınmayan barındırmalar için
+  const demo = params.get('demo') ?? location.hash.match(/demo-(fresh|marine|nano)/)?.[1] ?? null;
+  const eventOverride = params.get('event') ?? location.hash.match(/event-(spring|summer|halloween|winter)/)?.[1] ?? null;
+  if (eventOverride) setSeasonOverride(eventOverride);
   const raw = demo ? null : await loadSave();
   const state = demo ? demoState(demo, deviceLang()) : migrate(raw, deviceLang());
   const game = new Game(state);
@@ -89,6 +94,11 @@ async function boot() {
   });
   ev.on('luckyCaught', () => audio.play('lucky'));
   ev.on('dayChanged', () => refresh());
+  ev.on('seasonStarted', (e) => {
+    const d = getSeason(e.id);
+    if (d) toast(t('season.started', { name: `${d.icon} ${tx(d.name)}` }), 'good');
+    refresh();
+  });
   world.onFx = (k) => {
     if (k === 'eat') audio.play('eat');
     else if (k === 'splash') audio.play('splash');
@@ -99,7 +109,7 @@ async function boot() {
   let o2Warned = 0;
 
   attachInput(canvas, scene, game, {
-    onSelectFish: (id) => setUI({ selectedFish: id }),
+    onSelectFish: (id) => !ui.photo && setUI({ selectedFish: id }),
     onSelectDecor: (id) => setUI({ decorSel: id }),
     onTap: () => audio.unlock(),
     onResult: (r, kind) => {
@@ -155,6 +165,7 @@ async function boot() {
     SplashScreen.hide().catch(() => undefined);
     CapApp.addListener('appStateChange', async ({ isActive }) => {
       if (!isActive) {
+        gameCenter.sync();
         await writeSave(game.state);
         audio.suspend();
         scheduleNotifications(game);
@@ -179,6 +190,8 @@ async function boot() {
   setTimeout(() => {
     ads.init(game);
     iap.init(game).then(() => refresh());
+    gameCenter.onChange = refresh;
+    gameCenter.init(game);
   }, 1500);
   (window as unknown as { __game: Game }).__game = game;
   if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __world: world });

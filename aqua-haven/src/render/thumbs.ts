@@ -46,17 +46,18 @@ export function speciesThumb(id: string, sex: Sex = 'M', variant?: string, stage
   return url;
 }
 
-export function plantThumb(id: string): string {
-  const key = `pl:${id}`;
+export function plantThumb(id: string, width = 96): string {
+  const key = `pl:${id}:${width}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const def = getPlant(id);
-  const W = 96;
-  const H = 84;
+  const u = width / 96;
+  const W = width;
+  const H = Math.round(84 * u);
   const c = canvas(W, H);
   const ctx = c.getContext('2d')!;
-  const k = Math.min((W - 8) / (def.w * 1.3), (H - 6) / (def.type === 'floating' ? 10 : def.h));
-  ctx.setTransform(k, 0, 0, k, W / 2, def.type === 'floating' ? H * 0.2 : H - 3);
+  const k = Math.min((W - 8 * u) / (def.w * 1.3), (H - 6 * u) / (def.type === 'floating' ? 10 : def.h));
+  ctx.setTransform(k, 0, 0, k, W / 2, def.type === 'floating' ? H * 0.2 : H - 3 * u);
   const shape = plantShape('thumb-' + id, def, 1, 0, '#1b7aa3');
   drawPlant(ctx, def, shape, 1, 0, 0, 1, 1, false, -1000);
   const url = c.toDataURL();
@@ -64,17 +65,18 @@ export function plantThumb(id: string): string {
   return url;
 }
 
-export function decorThumb(id: string): string {
-  const key = `dc:${id}`;
+export function decorThumb(id: string, width = 110): string {
+  const key = `dc:${id}:${width}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const def = getDecor(id);
-  const W = 110;
-  const H = 84;
+  const u = width / 110;
+  const W = width;
+  const H = Math.round(84 * u);
   const c = canvas(W, H);
   const ctx = c.getContext('2d')!;
-  const k = Math.min((W - 10) / (def.w * 1.25), (H - 8) / (def.h * 1.25));
-  ctx.setTransform(k, 0, 0, k, W / 2, H - 5);
+  const k = Math.min((W - 10 * u) / (def.w * 1.25), (H - 8 * u) / (def.h * 1.25));
+  ctx.setTransform(k, 0, 0, k, W / 2, H - 5 * u);
   drawDecorStatic(ctx, def, 'thumb' + id);
   const url = c.toDataURL();
   cache.set(key, url);

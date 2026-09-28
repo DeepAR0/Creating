@@ -38,6 +38,8 @@ export const QUEST_TEMPLATES: QuestTemplate[] = [
     text: { tr: '{n} olgun bitkiyi buda', en: 'Trim {n} mature plants' } },
   { kind: 'lucky', minLevel: 5, weight: 2, target: () => 1,
     text: { tr: 'Bir şans baloncuğu yakala', en: 'Catch a lucky bubble' } },
+  { kind: 'photo', minLevel: 2, weight: 3, target: () => 1,
+    text: { tr: 'Akvaryumunun fotoğrafını çek', en: 'Take a photo of your aquarium' } },
 ];
 
 export interface AchievementDef {

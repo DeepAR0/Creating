@@ -4,6 +4,7 @@ import type { FishState, GameState, TankState } from '../types';
 import { computeEnv, type TankEnv } from './env';
 import { trait } from './fish';
 import { getTier } from '../../data/tanks';
+import { seasonBonus } from './season';
 
 export function variantMult(f: FishState): number {
   if (!f.var) return 1;
@@ -20,8 +21,8 @@ export function sellValue(s: GameState, f: FishState): number {
   const hot = s.daily.hot.includes(f.sp) ? BAL.HOT_MULT : 1;
   const bred = f.bred ? BAL.BRED_MULT : 1;
   const sick = f.sick ? 0.6 : 1;
-  const base = sp.pearls ? sp.sell : sp.sell;
-  return Math.max(1, Math.round(base * curve * condition * variantMult(f) * golden * hot * bred * sick));
+  const season = 1 + seasonBonus('sell');
+  return Math.max(1, Math.round(sp.sell * curve * condition * variantMult(f) * golden * hot * bred * sick * season));
 }
 
 /** Tankın ziyaretçi çekiciliği */
@@ -41,7 +42,7 @@ export function beautyScore(t: TankState, env?: TankEnv): number {
 
 export function tipRatePerMin(s: GameState, t: TankState, env?: TankEnv): number {
   const vip = s.iap.vipUntil > Date.now() ? BAL.VIP_TIP_MULT : 1;
-  return beautyScore(t, env) * BAL.TIP_RATE * vip;
+  return beautyScore(t, env) * BAL.TIP_RATE * vip * (1 + seasonBonus('tips'));
 }
 
 export function tipCapMinutes(s: GameState): number {

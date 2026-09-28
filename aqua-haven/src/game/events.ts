@@ -31,6 +31,7 @@ export interface GameEvents {
   purchase: { productId: string };
   save: Record<string, never>;
   dayChanged: { day: string };
+  seasonStarted: { id: string };
 }
 
 type Handler<T> = (payload: T) => void;

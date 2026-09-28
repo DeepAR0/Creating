@@ -35,6 +35,12 @@ Batık gemi, kale, hazine sandığı, yanardağ, deniz feneri, Atlantis tapına�
 GÖREVLER VE ÖDÜLLER
 Günlük görevler, 7 günlük giriş takvimi ve başarımlarla ek altın ve inci kazan.
 
+SEZON ETKİNLİKLERİ
+Bahar, yaz, Cadılar Bayramı ve kış festivallerinde özel görevleri tamamla, sınırlı süreli dekorları ve etkinliğe özel renkli balıkları topla.
+
+FOTOĞRAF MODU VE GAME CENTER
+Arayüzü gizle, akvaryumunun fotoğrafını çek ve arkadaşlarınla paylaş. Game Center sıralamalarında seviyeni ve akvaryumunun güzelliğini diğer oyuncularla karşılaştır.
+
 Aqua Haven ücretsiz oynanır. İsteğe bağlı uygulama içi satın alımlar ve reklamlar içerir.
 
 **Anahtar kelimeler (100):** akvaryum,balık,besleme,tycoon,simülasyon,resif,dekorasyon,üretme,mercan,evcil hayvan
@@ -74,6 +80,12 @@ Shipwrecks, castles, treasure chests, volcanoes, lighthouses, an Atlantis temple
 QUESTS & REWARDS
 Daily quests, a 7-day login calendar and achievements give extra coins and pearls.
 
+SEASONAL EVENTS
+Complete special tasks during the spring, summer, Halloween and winter festivals, and collect limited-time decorations and event-only fish colors.
+
+PHOTO MODE & GAME CENTER
+Hide the interface, take a photo of your aquarium and share it with friends. Compare your level and your aquarium's beauty with other players on Game Center leaderboards.
+
 Aqua Haven is free to play. It includes optional in-app purchases and ads.
 
 **Keywords (100):** aquarium,fish,tank,tycoon,simulation,reef,idle,breeding,coral,decorate,pet,ocean
@@ -82,7 +94,40 @@ Aqua Haven is free to play. It includes optional in-app purchases and ads.
 
 ## İnceleme notu (App Review Information → Notes)
 
-> The game works fully offline and requires no account. In-app purchases (pearl packs, Remove Ads, Starter Pack, VIP monthly subscription) can be found by tapping the pearl counter at the top right. "Restore purchases" is in the pearl shop and in Settings. Mystery Egg odds are shown in the Shop → Food & Care tab. Rewarded ads are always optional.
+> The game works fully offline and requires no account. In-app purchases (pearl packs, Remove Ads, Starter Pack, VIP monthly subscription) can be found by tapping the pearl counter at the top right. "Restore purchases" is in the pearl shop and in Settings. Mystery Egg odds are shown in the Shop → Food & Care tab. Rewarded ads are always optional. Seasonal events follow the calendar (spring Mar 20–Apr 20, summer Jul 1–Aug 15, Halloween Oct 15–Nov 7, winter Dec 10–Jan 10); outside these dates the event tab shows the next event. Photo mode (camera button, bottom left) uses the share sheet; the app only asks to add photos to the library when the user chooses "Save Image". Game Center leaderboards and achievements are under Quests → Achievements and in Settings.
+
+## Game Center (App Store Connect → uygulama → Game Center)
+
+Önce uygulama sürümü sayfasında **Game Center** kutusunu işaretleyin. Xcode projesinde `App.entitlements` dosyası Game Center yetkisini zaten içerir. Kimlikler `src/config/gamecenter.ts` ile birebir aynı olmalıdır.
+
+**Sıralamalar** (Klasik, tam sayı, yüksekten düşüğe, en iyi skor tutulur):
+
+| Kimlik | Ad (TR / EN) | Açıklama |
+|---|---|---|
+| aquahaven.lb.level | Seviye / Level | Oyuncu seviyesi |
+| aquahaven.lb.beauty | En Güzel Akvaryum / Most Beautiful Aquarium | En güzel tankın güzellik puanı |
+| aquahaven.lb.coins | Toplam Kazanç / Total Earnings | Satışlardan kazanılan toplam altın |
+
+**Başarımlar** (her biri oyundaki kademelere göre yüzde yüzde ilerler; görseller `store-assets/game-center/` klasöründe, 1024×1024):
+
+| Kimlik | Ad (TR / EN) | Kazanılınca açıklama (TR / EN) | Puan |
+|---|---|---|---|
+| aquahaven.ach.feeder | Usta Besleyici / Master Feeder | 5.000 kez besledin / Fed 5,000 times | 50 |
+| aquahaven.ach.merchant | Balık Tüccarı / Fish Merchant | 1.000 canlı sattın / Sold 1,000 animals | 75 |
+| aquahaven.ach.grower | Yetiştirici / Grower | 200 canlı büyüttün / Raised 200 animals | 60 |
+| aquahaven.ach.breeder | Üretici / Breeder | 50 yavru ürettin / Bred 50 babies | 80 |
+| aquahaven.ach.geneticist | Genetikçi / Geneticist | 20 renk mutasyonu keşfettin / Discovered 20 color mutations | 100 |
+| aquahaven.ach.cleaner | Cam Parlatıcı / Glass Polisher | 300 birim yosun temizledin / Cleaned 300 units of algae | 50 |
+| aquahaven.ach.aquarist | Akvaryumcu / Aquarist | 100 su değişimi yaptın / Did 100 water changes | 50 |
+| aquahaven.ach.tycoon | Akvaryum Patronu / Aquarium Tycoon | 1.000.000 altın kazandın / Earned 1,000,000 coins | 100 |
+| aquahaven.ach.collector | Koleksiyoncu / Collector | 44 türün hepsini keşfettin / Discovered all 44 species | 100 |
+| aquahaven.ach.expert | Uzman / Expert | 30. seviyeye ulaştın / Reached level 30 | 100 |
+| aquahaven.ach.designer | Dekoratör / Designer | 40 dekor ve bitki yerleştirdin / Placed 40 decorations and plants | 50 |
+| aquahaven.ach.lucky | Şanslı / Lucky | 200 şans baloncuğu yakaladın / Caught 200 lucky bubbles | 60 |
+| aquahaven.ach.gardener | Bahçıvan / Gardener | 150 bitki budadın / Trimmed 150 plants | 50 |
+| aquahaven.ach.dedicated | Sadık Oyuncu / Dedicated Player | 300 günlük görev tamamladın / Completed 300 daily quests | 75 |
+
+Toplam: 1000 puan (Apple sınırı). Kazanılmadan önceki açıklama için aynı metnin "…" yerine hedefini yazabilirsiniz (örn. "5.000 kez besle").
 
 ## Satın alma ürünleri (App Store Connect → Monetization)
 

@@ -75,6 +75,8 @@
 	<!-- AdMob: yayın öncesi kendi AdMob uygulama kimliğinizle değiştirin (src/config/app.ts ile aynı) -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Lets you save photos of your aquarium to your library.</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This identifier is used to show you more relevant ads that keep Aqua Haven free.</string>
 	<!-- Google'ın önerdiği SKAdNetwork listesi (2024 sonu). Yayından önce

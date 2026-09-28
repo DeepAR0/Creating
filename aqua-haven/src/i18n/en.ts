@@ -487,6 +487,41 @@ export const en = {
   // teklif
   'offer.title': 'Special offer',
   'offer.cta': 'Get it',
+
+  'err.ended': 'This event has ended',
+
+  // Game Center
+  'gc.title': 'Game Center',
+  'gc.achievements': 'Achievements',
+  'gc.leaderboards': 'Leaderboards',
+  'gc.failed': 'Couldn’t open Game Center. You can sign in from iPhone Settings › Game Center.',
+
+  // fotoğraf modu
+  'photo.btn': 'Photo',
+  'photo.hint': 'Swipe to frame your shot, then tap the shutter',
+  'photo.title': 'Your aquarium photo',
+  'photo.share': 'Share',
+  'photo.again': 'New photo',
+  'photo.saveHint': 'Press and hold the photo to save it.',
+  'photo.shareText': 'My aquarium in Aqua Haven 🐠',
+  'photo.lights': 'Lights',
+
+  // sezon etkinlikleri
+  'season.tab': 'Event',
+  'season.endsIn': 'Ends in {t}',
+  'season.next': 'Next event: {name} in {d} days',
+  'season.none': 'No event right now.',
+  'season.tasks': 'Event tasks',
+  'season.shop': 'Limited-time items',
+  'season.reward': 'Finish every task to win',
+  'season.rewardGot': 'Event reward added to your storage!',
+  'season.started': '{name} has begun!',
+  'season.limited': 'Limited',
+  'season.bonus.xp': '+{n}% XP from everything',
+  'season.bonus.growth': 'Fish grow {n}% faster',
+  'season.bonus.tips': '+{n}% visitor income',
+  'season.bonus.sell': '+{n}% sale prices',
+  'season.days': '{n}d',
 };
 
 export type Dict = typeof en;

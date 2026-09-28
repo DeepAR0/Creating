@@ -85,6 +85,7 @@ export class Scene {
   cursor = { x: 0, y: 0, active: false };
   safe = { left: 0, right: 0 };
   quality: 'high' | 'low' = 'high';
+  photo = false; // fotoğraf modu: seçim, rozet ve yazılar çizilmez
   private room: Cache | null = null;
   private bg: Cache | null = null;
   private sub: Cache | null = null;
@@ -400,7 +401,7 @@ export class Scene {
         const shape = plantShape(p.id, def, p.g, (1 - p.z) * 0.3, haze);
         drawPlant(ctx, def, shape, p.g, p.x, groundY(g, p.z), depthScale(p.z), time, !!p.flip, g.surfaceY);
         if (this.tool === 'decor' && this.decorSel === p.id) this.drawSelBox(ctx, p.x, groundY(g, p.z), def.w, def.h * (0.35 + 0.65 * p.g));
-        if (p.g >= 1 && this.tool !== 'decor') this.drawTrimBadge(ctx, p.x, groundY(g, p.z) - def.h * depthScale(p.z) - 1, time);
+        if (p.g >= 1 && this.tool !== 'decor' && !this.photo) this.drawTrimBadge(ctx, p.x, groundY(g, p.z) - def.h * depthScale(p.z) - 1, time);
       } else this.drawAgent(ctx, it.ref as Agent, night);
     }
   }
@@ -461,7 +462,7 @@ export class Scene {
 
   private drawAgent(ctx: CanvasRenderingContext2D, a: Agent, night: boolean) {
     const size = this.world.sizeOf(a.sp, a.fish) * depthScale(a.z);
-    const selected = this.selectedId === a.id;
+    const selected = this.selectedId === a.id && !this.photo;
     if (selected) {
       const pulse = 0.5 + 0.5 * Math.sin(this.world.time * 5);
       ctx.strokeStyle = `rgba(255,255,255,${0.5 + pulse * 0.4})`;
@@ -686,7 +687,7 @@ export class Scene {
 
   private drawOverlay(ctx: CanvasRenderingContext2D, g: TankGeom, time: number) {
     const c = this.cursor;
-    if (!c.active) return;
+    if (!c.active || this.photo) return;
     if (this.tool === 'sponge') {
       ctx.save();
       ctx.translate(c.x, c.y);
@@ -718,6 +719,7 @@ export class Scene {
   }
 
   private drawTexts(ctx: CanvasRenderingContext2D) {
+    if (this.photo) return;
     const cam = this.cam;
     cam.applyScreen(ctx);
     ctx.textAlign = 'center';

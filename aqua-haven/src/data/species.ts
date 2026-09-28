@@ -19,6 +19,11 @@ export const SPECIES: SpeciesDef[] = [
       anal: 'small', pelvic: 'small', eye: 1.05, shine: 0.45,
       pattern: [{ type: 'scales', color: 'rgba(255,232,160,0.35)' }],
     },
+    variants: [
+      { id: 'sakura', name: { tr: 'Sakura', en: 'Sakura' }, mult: 2.5, w: 0,
+        look: { c1: '#ffd6e0', c2: '#fff5f8', fin: 'rgba(255,170,200,0.85)', finEdge: 'rgba(255,255,255,0.95)',
+          pattern: [{ type: 'patches', color: '#ff8fb1', n: 3 }, { type: 'scales', color: 'rgba(255,255,255,0.35)' }] } },
+    ],
     name: { tr: 'Japon Balığı', en: 'Goldfish' }, latin: 'Carassius auratus',
     fact: {
       tr: 'İyi bakılan japon balıkları 20 yıldan fazla yaşayabilir ve sahiplerini tanıyabilir.',
@@ -54,6 +59,11 @@ export const SPECIES: SpeciesDef[] = [
         { type: 'neon', color: '#1ee3ff' },
       ],
     },
+    variants: [
+      { id: 'frost', name: { tr: 'Buz', en: 'Frost' }, mult: 2.5, w: 0,
+        look: { c1: '#dbeafe', c2: '#ffffff', shine: 0.8, glow: '#bae6fd',
+          pattern: [{ type: 'rearColor', color: '#93c5fd', w: 0.5, a: 0.9, part: 'lower' }, { type: 'neon', color: '#f0f9ff' }] } },
+    ],
     name: { tr: 'Neon Tetra', en: 'Neon Tetra' }, latin: 'Paracheirodon innesi',
     fact: {
       tr: 'Neon tetranın parlak mavi şeridi, ışığı yansıtan özel hücrelerden gelir.',
@@ -143,6 +153,9 @@ export const SPECIES: SpeciesDef[] = [
       tail: 'round', tailSize: 0.42, dorsal: 'small', dorsalSize: 0.3, pattern: [],
     },
     variants: [
+      { id: 'sunset', name: { tr: 'Gün Batımı', en: 'Sunset' }, mult: 2.5, w: 0,
+        look: { c1: '#ffb347', c2: '#ffe0a3', fin: 'rgba(255,80,60,0.92)', finEdge: 'rgba(255,215,0,0.95)',
+          pattern: [{ type: 'rearColor', color: '#ff5e62', w: 0.5 }] } },
       { id: 'cobra', name: { tr: 'Kobra', en: 'Cobra' }, mult: 2.5, w: 5,
         look: { c1: '#b9c46a', fin: 'rgba(210,220,70,0.9)', pattern: [{ type: 'marble', color: '#2f3a17' }] } },
       { id: 'tuxedo', name: { tr: 'Smokin', en: 'Tuxedo' }, mult: 2, w: 6,
@@ -257,6 +270,9 @@ export const SPECIES: SpeciesDef[] = [
       dorsal: 'small', dorsalSize: 0.35, anal: 'small', analSize: 0.4, pelvic: 'small',
     },
     variants: [
+      { id: 'pumpkin', name: { tr: 'Balkabağı', en: 'Pumpkin' }, mult: 3, w: 0,
+        look: { c1: '#ff7a00', c2: '#e05a00', fin: 'rgba(255,120,0,0.9)', finEdge: 'rgba(25,20,20,0.95)',
+          pattern: [{ type: 'patches', color: '#1a1410', n: 2 }] } },
       { id: 'koi', name: { tr: 'Koi', en: 'Koi' }, mult: 3, w: 5,
         look: { c1: '#fff4ea', c2: '#ffffff', fin: 'rgba(255,120,60,0.85)',
           pattern: [{ type: 'patches', color: '#ff4f1f', n: 3 }, { type: 'patches', color: '#1a1a1a', n: 2 }] } },

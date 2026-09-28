@@ -466,4 +466,39 @@ export const tr: Dict = {
 
   'offer.title': 'Özel teklif',
   'offer.cta': 'Hemen al',
+
+  'err.ended': 'Bu etkinlik sona erdi',
+
+  // Game Center
+  'gc.title': 'Game Center',
+  'gc.achievements': 'Başarımlar',
+  'gc.leaderboards': 'Sıralamalar',
+  'gc.failed': 'Game Center açılamadı. iPhone Ayarlar › Game Center’dan giriş yapabilirsin.',
+
+  // fotoğraf modu
+  'photo.btn': 'Fotoğraf',
+  'photo.hint': 'Kareyi kaydırarak ayarla, sonra deklanşöre dokun',
+  'photo.title': 'Akvaryum fotoğrafın',
+  'photo.share': 'Paylaş',
+  'photo.again': 'Yeni fotoğraf',
+  'photo.saveHint': 'Kaydetmek için fotoğrafa basılı tut.',
+  'photo.shareText': 'Aqua Haven’daki akvaryumum 🐠',
+  'photo.lights': 'Işıklar',
+
+  // sezon etkinlikleri
+  'season.tab': 'Etkinlik',
+  'season.endsIn': '{t} sonra bitiyor',
+  'season.next': 'Sıradaki etkinlik: {name}, {d} gün sonra',
+  'season.none': 'Şu an etkinlik yok.',
+  'season.tasks': 'Etkinlik görevleri',
+  'season.shop': 'Sınırlı süreli ürünler',
+  'season.reward': 'Tüm görevleri bitir, kazan',
+  'season.rewardGot': 'Etkinlik ödülü deposuna eklendi!',
+  'season.started': '{name} başladı!',
+  'season.limited': 'Sınırlı',
+  'season.bonus.xp': 'Her şeyden +%{n} GP',
+  'season.bonus.growth': 'Balıklar %{n} daha hızlı büyür',
+  'season.bonus.tips': 'Ziyaretçi geliri +%{n}',
+  'season.bonus.sell': 'Satış fiyatları +%{n}',
+  'season.days': '{n}g',
 };

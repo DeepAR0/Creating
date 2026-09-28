@@ -8,7 +8,7 @@ export const SAVE_VERSION = 1;
 
 const STAT_KEYS: StatKey[] = [
   'fed', 'sold', 'grown', 'bred', 'mutations', 'wiped', 'vacuumed', 'waterChanges', 'coinsEarned',
-  'bought', 'decorPlaced', 'lucky', 'trimmed', 'tipsCollected', 'questsDone', 'adsWatched', 'eggsOpened',
+  'bought', 'decorPlaced', 'lucky', 'trimmed', 'tipsCollected', 'questsDone', 'adsWatched', 'eggsOpened', 'photos',
 ];
 
 const NAMES: Record<Lang, string[]> = {

@@ -16,7 +16,8 @@ export type Sfx =
   | 'wipe'
   | 'heart'
   | 'pearl'
-  | 'lucky';
+  | 'lucky'
+  | 'shutter';
 
 const PENTA = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51];
 const CHORDS = [
@@ -231,6 +232,11 @@ class AudioEngine {
       case 'pearl':
         this.tone(2093, 0.6, { gain: 0.07, rev: 0.5 });
         this.tone(2637, 0.6, { gain: 0.05, delay: 0.08, rev: 0.5 });
+        break;
+      case 'shutter':
+        this.noise(0.04, { type: 'highpass', f0: 2800, gain: 0.09 });
+        this.tone(1900, 0.03, { gain: 0.05, delay: 0.02 });
+        this.noise(0.06, { type: 'highpass', f0: 2200, gain: 0.06, delay: 0.09 });
         break;
       case 'lucky':
         for (let i = 0; i < 5; i++) this.tone(PENTA[Math.floor(Math.random() * PENTA.length)] * 2, 0.2, { gain: 0.05, delay: i * 0.05, rev: 0.4 });

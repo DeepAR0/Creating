@@ -33,6 +33,10 @@ import { openUrl } from '../services/platform';
 import { clearSave } from '../game/save';
 import { stageOf } from '../render/fishSprites';
 import { Tutorial } from './Tutorial';
+import { enterPhoto, exitPhoto, capturePhoto, sharePhoto } from './photo';
+import { gameCenter } from '../services/gamecenter';
+import { isIOS } from '../services/platform';
+import { activeSeason, claimSeasonReward, claimSeasonTask, nextSeason, seasonClaimable, seasonDecorOnSale, seasonTaskCoins } from '../game/sim/season';
 
 // ------------------------------------------------------------------ küçük bileşenler
 
@@ -173,6 +177,10 @@ function Tools() {
             {k === 'feed' && <span class="cnt num">{foodLeft}</span>}
           </button>
         ))}
+        <button class="tbtn" data-tut="tool-photo" onClick={() => { audio.unlock(); audio.play('click'); enterPhoto(); }}>
+          <I.Camera size={22} />
+          {t('photo.btn')}
+        </button>
       </div>
       {ui.foodOpen && tool === 'feed' && (
         <div class="foodpick">
@@ -296,6 +304,37 @@ function DecorBar() {
   );
 }
 
+/** Mağazadan alınan dekor/bitkiyi tanka koyup yerleştirme moduna geçer */
+function placeFromShop(kind: 'decor' | 'plant', id: string) {
+  const g = getGame();
+  const g2 = getWorld().geom;
+  const x = 4 + Math.random() * (g2.W - 8);
+  const z = 0.2 + Math.random() * 0.7;
+  const r = kind === 'decor' ? A.placeDecor(g, id, x, z) : A.placePlant(g, id, x, z);
+  if (r.ok) {
+    toast(t('shop.placeNow'), 'good');
+    closePanel();
+    setUI({ tool: 'decor', decorSel: r.value ?? null });
+  }
+}
+
+function SeasonPill() {
+  useUI(0.2);
+  const s = getGame().state;
+  const a = activeSeason();
+  if (!a || s.season?.id !== a.def.id) return null;
+  const days = Math.max(1, Math.ceil((a.end - Date.now()) / 86400000));
+  const n = seasonClaimable(s);
+  return (
+    <button class="seasonpill" style={{ borderColor: a.def.color }} onClick={() => openPanel('quests', 'season')}>
+      <span>{a.def.icon}</span>
+      <span>{tx(a.def.name)}</span>
+      <span class="muted">· {t('season.days', { n: days })}</span>
+      {n > 0 && <span class="dot num">{n}</span>}
+    </button>
+  );
+}
+
 // ------------------------------------------------------------------ balık kartı
 
 function FishCard() {
@@ -398,17 +437,7 @@ function ShopPanel() {
     const r = act(A.buySpecies(g, sp.id, sexes[sp.id] ?? 'M'), 'splash');
     if (r.ok && r.value) toast(t('shop.added', { name: r.value.name }), 'good');
   };
-  const place = (kind: 'decor' | 'plant', id: string) => {
-    const g2 = getWorld().geom;
-    const x = 4 + Math.random() * (g2.W - 8);
-    const z = 0.2 + Math.random() * 0.7;
-    const r = kind === 'decor' ? A.placeDecor(g, id, x, z) : A.placePlant(g, id, x, z);
-    if (r.ok) {
-      toast(t('shop.placeNow'), 'good');
-      closePanel();
-      setUI({ tool: 'decor', decorSel: r.value ?? null });
-    }
-  };
+  const place = placeFromShop;
   let body: preact.JSX.Element;
   if (tab === 'fish' || tab === 'creatures') {
     const list = SPECIES.filter((sp) => sp.water === tank.type && !sp.exclusive && (tab === 'fish' ? sp.kind === 'fish' : sp.kind !== 'fish')).sort((a, b) => a.level - b.level || a.price - b.price);
@@ -462,19 +491,22 @@ function ShopPanel() {
       </div>
     );
   } else if (tab === 'decor') {
-    const list = DECOR.filter((d) => (d.water === 'both' || d.water === tank.type) && (!d.exclusive || (s.inv.decor[d.id] ?? 0) > 0)).sort((a, b) => a.level - b.level);
+    const owned = (id: string) => (s.inv.decor[id] ?? 0) > 0;
+    const list = DECOR.filter((d) => (d.water === 'both' || d.water === tank.type) && (!d.exclusive || owned(d.id)) && (!d.season || seasonDecorOnSale(d.season) || owned(d.id)))
+      .sort((a, b) => Number(!!b.season && seasonDecorOnSale(b.season)) - Number(!!a.season && seasonDecorOnSale(a.season)) || a.level - b.level);
     body = (
       <div class="grid">
         {list.map((d) => (
           <div class={`card ${lockedCard(d.level) ? 'locked' : ''}`}>
             <span class={`rar ${d.rarity}`}>{t(`rar.${d.rarity}` as TKey)}</span>
+            {d.season && seasonDecorOnSale(d.season) && <span class="rar legendary" style={{ left: 'auto', right: '6px' }}>{activeSeason()?.def.icon} {t('season.limited')}</span>}
             <div class="thumb"><img src={decorThumb(d.id)} /></div>
             <h3>{tx(d.name)}</h3>
             <div class="sub">{tx(d.desc)}</div>
             <div class="sub">{t('shop.beauty')} {d.beauty}{d.hide ? ` · ${t('shop.hide')}` : ''}{d.sites?.length ? ` · 🥚 ${d.sites.map((x) => t(`site.${x}` as TKey)).join(', ')}` : ''}</div>
             {lockedCard(d.level) ? <div class="muted"><I.Lock size={14} /> {t('c.unlockAt', { n: d.level })}</div> : (
               <div class="row">
-                {!d.exclusive && <button class="btn" style={{ flex: 1 }} onClick={() => { if (act(A.buyDecor(g, d.id), 'coin').ok) place('decor', d.id); }}><Price coins={d.price} pearls={d.pearls} /></button>}
+                {!d.exclusive && seasonDecorOnSale(d.season) && <button class="btn" style={{ flex: 1 }} onClick={() => { if (act(A.buyDecor(g, d.id), 'coin').ok) place('decor', d.id); }}><Price coins={d.price} pearls={d.pearls} /></button>}
                 {(s.inv.decor[d.id] ?? 0) > 0 && <button class="btn blue" onClick={() => place('decor', d.id)}>{t('c.place')} ({s.inv.decor[d.id]})</button>}
               </div>
             )}
@@ -702,7 +734,8 @@ function QuestsPanel() {
   useUI(1);
   const g = getGame();
   const s = g.state;
-  const tab = ui.panelTab || 'daily';
+  const season = activeSeason();
+  const tab = ui.panelTab === 'season' && !season ? 'daily' : ui.panelTab || 'daily';
   const lr = todaysLoginReward(s);
   const claimLogin = async (double: boolean) => {
     if (double && !(await watchAd('doubleQuest'))) return;
@@ -719,7 +752,8 @@ function QuestsPanel() {
   const rewardText = (r: typeof lr) =>
     r.kind === 'coins' ? `${fmt(r.amount)} ${t('c.coins')}` : r.kind === 'pearls' ? `${r.amount} ${t('c.pearls')}` : r.kind === 'food' ? t('q.foodPack') : r.kind === 'items' ? t('q.items') : `${t('q.egg')} + ${r.pearls} ${t('c.pearls')}`;
   return (
-    <Modal title={t('q.title')} onClose={closePanel} tabs={[['daily', t('q.daily')], ['login', t('q.login')], ['ach', t('q.ach')]]} tab={tab} onTab={(k) => setUI({ panelTab: k })}>
+    <Modal title={t('q.title')} onClose={closePanel} tabs={[['daily', t('q.daily')], ...(season ? [['season', `${season.def.icon} ${t('season.tab')}`] as [string, string]] : []), ['login', t('q.login')], ['ach', t('q.ach')]]} tab={tab} onTab={(k) => setUI({ panelTab: k })}>
+      {tab === 'season' && <SeasonTab />}
       {tab === 'daily' && (
         <div class="list">
           <div class="muted">{t('q.resetsIn', { t: fmtTime(msUntilMidnight() / 1000, getLang()) })}</div>
@@ -787,6 +821,12 @@ function QuestsPanel() {
       )}
       {tab === 'ach' && (
         <div class="list">
+          {gameCenter.available && (
+            <div class="row wrap">
+              <button class="btn blue" onClick={() => openGameCenter('achievements')}><I.Trophy size={16} /> {t('gc.title')} · {t('gc.achievements')}</button>
+              <button class="btn blue" onClick={() => openGameCenter('leaderboards')}><I.Trophy size={16} /> {t('gc.leaderboards')}</button>
+            </div>
+          )}
           {ACHIEVEMENTS.map((a) => {
             const st = achievementStatus(s, a);
             return (
@@ -802,6 +842,114 @@ function QuestsPanel() {
         </div>
       )}
     </Modal>
+  );
+}
+
+async function openGameCenter(view: 'achievements' | 'leaderboards') {
+  if (!(await gameCenter.show(view))) toast(t('gc.failed'), 'bad');
+}
+
+function SeasonTab() {
+  const g = getGame();
+  const s = g.state;
+  const a = activeSeason();
+  const [sexes, setSexes] = useState<Record<string, 'M' | 'F'>>({});
+  const st = s.season;
+  if (!a || !st || st.id !== a.def.id) {
+    const n = nextSeason();
+    return (
+      <div class="list">
+        <div class="muted">{t('season.none')}</div>
+        {n && <div>{n.def.icon} {t('season.next', { name: tx(n.def.name), d: Math.ceil((n.start - Date.now()) / 86400000) })}</div>}
+      </div>
+    );
+  }
+  const def = a.def;
+  const lvl = s.player.level;
+  const reward = getDecor(def.reward);
+  return (
+    <div class="list">
+      <div class="item season-head" style={{ borderColor: def.color }}>
+        <span style={{ fontSize: '34px' }}>{def.icon}</span>
+        <div class="grow">
+          <b>{tx(def.name)}</b>
+          <div class="muted">{tx(def.desc)}</div>
+          <div class="row wrap">
+            <span class="trait special">{t(`season.bonus.${def.bonus.kind}` as TKey, { n: Math.round(def.bonus.v * 100) })}</span>
+            <span class="muted">{t('season.endsIn', { t: fmtTime((a.end - Date.now()) / 1000, getLang()) })}</span>
+          </div>
+        </div>
+      </div>
+      <div class="sec">{t('season.tasks')}</div>
+      {def.tasks.map((tk, i) => {
+        const tpl = QUEST_TEMPLATES.find((x) => x.kind === tk.kind)!;
+        const target = st.targets[i];
+        const prog = st.progress[i];
+        return (
+          <div class="item">
+            <div class="grow">
+              <b>{tx(tpl.text).replace('{n}', fmt(target))}</b>
+              <div class="row"><Bar v={(prog / target) * 100} c={def.color} /><span class="muted num">{fmt(Math.floor(prog))}/{fmt(target)}</span></div>
+              <div class="row muted"><Price coins={seasonTaskCoins(lvl, i)} /> <Price pearls={tk.pearls} /></div>
+            </div>
+            {st.claimed[i] ? <span class="ok">{t('c.claimed')}</span> : (
+              <button class="btn" disabled={prog < target} onClick={() => { if (claimSeasonTask(g, i)) { audio.play('success'); refresh(); } }}>{t('c.claim')}</button>
+            )}
+          </div>
+        );
+      })}
+      <div class="item">
+        <img src={decorThumb(reward.id)} />
+        <div class="grow">
+          <b>{t('season.reward')}: {tx(reward.name)}</b>
+          <div class="muted">{tx(reward.desc)}</div>
+          <Price pearls={def.rewardPearls} />
+        </div>
+        {st.done ? <span class="ok">{t('c.claimed')}</span> : (
+          <button class="btn gold" disabled={!st.claimed.every(Boolean)} onClick={() => { if (claimSeasonReward(g)) { audio.play('levelUp'); toast(t('season.rewardGot'), 'good'); refresh(); } }}>{t('c.claim')}</button>
+        )}
+      </div>
+      <div class="sec">{t('season.shop')}</div>
+      <div class="grid">
+        {def.decor.map((id) => {
+          const d = getDecor(id);
+          const n = s.inv.decor[id] ?? 0;
+          return (
+            <div class="card">
+              <span class="rar legendary">{def.icon} {t('season.limited')}</span>
+              <div class="thumb"><img src={decorThumb(id)} /></div>
+              <h3>{tx(d.name)}</h3>
+              <div class="sub">{tx(d.desc)}</div>
+              <div class="sub">{t('shop.beauty')} {d.beauty}</div>
+              <div class="row">
+                <button class="btn" style={{ flex: 1 }} onClick={() => { if (act(A.buyDecor(g, id), 'coin').ok) placeFromShop('decor', id); }}><Price coins={d.price} /></button>
+                {n > 0 && <button class="btn blue" onClick={() => placeFromShop('decor', id)}>{t('c.place')} ({n})</button>}
+              </div>
+            </div>
+          );
+        })}
+        {def.fish.map(({ sp: spId, variant }) => {
+          const sp = getSpecies(spId);
+          const v = sp.variants?.find((x) => x.id === variant);
+          const sex = sexes[spId] ?? 'M';
+          const locked = sp.level > lvl;
+          return (
+            <div class={`card ${locked ? 'locked' : ''}`}>
+              <span class="rar legendary">{def.icon} {t('season.limited')}</span>
+              <div class="thumb"><img src={speciesThumb(spId, sex, variant)} /></div>
+              <h3>{tx(sp.name)} · {tx(v?.name)}</h3>
+              <div class="sub">{t('shop.sells')}: ×{v?.mult ?? 1} · {t('shop.grows')} {fmtTime(sp.growTime, getLang())}</div>
+              {locked ? <div class="muted"><I.Lock size={14} /> {t('c.unlockAt', { n: sp.level })}</div> : (
+                <div class="row">
+                  {sp.breed && <button class="btn ghost" style={{ padding: '6px 8px' }} onClick={() => setSexes({ ...sexes, [spId]: sex === 'M' ? 'F' : 'M' })}>{sex === 'M' ? '♂' : '♀'}</button>}
+                  <button class="btn" style={{ flex: 1 }} onClick={() => { const r = act(A.buySeasonFish(g, spId, variant, sex), 'splash'); if (r.ok && r.value) toast(t('shop.added', { name: r.value.name }), 'good'); }}><Price coins={A.seasonFishPrice(sp)} /></button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -1002,6 +1150,12 @@ function SettingsPanel() {
         <div class="item"><b class="grow">{t('set.graphics')}</b>
           {(['high', 'low'] as const).map((q) => <button class={`btn ${st.quality === q ? 'blue' : 'ghost'}`} onClick={() => { set({ quality: q }); getScene().quality = q; getScene().resize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1); }}>{t(q === 'high' ? 'set.high' : 'set.low')}</button>)}
         </div>
+        {gameCenter.available && (
+          <div class="item"><b class="grow">{t('gc.title')}</b>
+            <button class="btn ghost" onClick={() => openGameCenter('achievements')}><I.Trophy size={16} /> {t('gc.achievements')}</button>
+            <button class="btn ghost" onClick={() => openGameCenter('leaderboards')}>{t('gc.leaderboards')}</button>
+          </div>
+        )}
         <button class="btn ghost" onClick={async () => { const ok = await iap.restore(); toast(ok ? t('set.restored') : t('store.unavailable'), ok ? 'good' : 'bad'); }}>{t('set.restore')}</button>
         {ads.privacyRequired && <button class="btn ghost" onClick={() => ads.showPrivacyOptions()}>{t('set.privacy')}</button>}
         <div class="links"><a onClick={() => openUrl(APP.privacyUrl)}>{t('set.policy')}</a><a onClick={() => openUrl(APP.termsUrl)}>{t('set.terms')}</a><a onClick={() => openUrl(`mailto:${APP.supportEmail}`)}>{t('set.support')}</a></div>
@@ -1057,7 +1211,7 @@ function Overlays() {
     const unlocks = [
       ...SPECIES.filter((x) => x.level === lv.level && !x.exclusive).map((x) => ({ img: speciesThumb(x.id), name: tx(x.name) })),
       ...PLANTS.filter((x) => x.level === lv.level).map((x) => ({ img: plantThumb(x.id), name: tx(x.name) })),
-      ...DECOR.filter((x) => x.level === lv.level && !x.exclusive).map((x) => ({ img: decorThumb(x.id), name: tx(x.name) })),
+      ...DECOR.filter((x) => x.level === lv.level && !x.exclusive && !x.season).map((x) => ({ img: decorThumb(x.id), name: tx(x.name) })),
     ];
     return (
       <Modal title={t('lvl.up')} small>
@@ -1122,10 +1276,52 @@ function Panel() {
   }
 }
 
-export function App() {
+function PhotoMode() {
+  const g = getGame();
+  const shot = ui.photoShot;
+  const [flash, setFlash] = useState(false);
+  const snap = () => {
+    audio.play('shutter');
+    haptic.light();
+    const url = capturePhoto();
+    setFlash(true);
+    setTimeout(() => setFlash(false), 320);
+    setTimeout(() => setUI({ photoShot: url }), 260);
+  };
+  if (shot) {
+    return (
+      <Modal title={t('photo.title')} onClose={() => setUI({ photoShot: null })}>
+        <img class="photoshot" src={shot} alt={t('photo.title')} />
+        <div class="row wrap" style={{ marginTop: '8px' }}>
+          <button class="btn gold" onClick={async () => { if (!(await sharePhoto(shot))) toast(t('photo.saveHint')); }}>{t('photo.share')}</button>
+          <button class="btn blue" onClick={() => setUI({ photoShot: null })}><I.Camera size={16} /> {t('photo.again')}</button>
+          <span class="spacer" />
+          <button class="btn ghost" onClick={exitPhoto}>{t('c.close')}</button>
+        </div>
+        {!isIOS && <div class="muted" style={{ marginTop: '6px' }}>{t('photo.saveHint')}</div>}
+      </Modal>
+    );
+  }
+  return (
+    <>
+      {flash && <div class="pass flash" />}
+      <div class="pass photohint">{t('photo.hint')}</div>
+      <div class="photobar">
+        <button class="iconbtn" onClick={exitPhoto} aria-label={t('c.close')}><I.Close size={22} /></button>
+        <button class="shutter" onClick={snap} aria-label={t('photo.btn')} />
+        <button class="iconbtn" onClick={() => { A.toggleLight(g, g.tank); refresh(); }} aria-label={t('photo.lights')}>{g.tank.light ? <I.Bulb size={22} /> : <I.Moon size={22} />}</button>
+      </div>
+    </>
+  );
+}
+
+function Hud() {
+  useUI();
+  if (ui.photo) return <PhotoMode />;
   return (
     <>
       <TopBar />
+      <SeasonPill />
       <Tools />
       <Menus />
       <TipJar />
@@ -1135,6 +1331,14 @@ export function App() {
       <Toasts />
       <Panel />
       <Tutorial />
+    </>
+  );
+}
+
+export function App() {
+  return (
+    <>
+      <Hud />
       <Overlays />
       <div class="rotate">{t('hud.rotate')}</div>
     </>

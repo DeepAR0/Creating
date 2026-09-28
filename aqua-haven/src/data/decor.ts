@@ -98,6 +98,40 @@ export const DECOR: DecorDef[] = [
     id: 'arch', water: 'marine', rarity: 'rare', level: 14, price: 2400, art: 'arch', w: 28, h: 18, beauty: 18, hide: true, sites: ['cave'],
     name: { tr: 'Resif Kemeri', en: 'Reef Arch' }, desc: { tr: 'Mercanlarla kaplı doğal bir kaya kemeri.', en: 'A natural rock arch covered in coral.' },
   },
+
+  // ---------------------------------------------------------------- sezon etkinlikleri
+  {
+    id: 'flowerPot', water: 'fresh', rarity: 'rare', level: 1, price: 900, season: 'spring', art: 'flowerPot', w: 10, h: 12, beauty: 16,
+    name: { tr: 'Lale Saksısı', en: 'Tulip Pot' }, desc: { tr: 'Bahar Şenliği’ne özel: rengârenk laleler.', en: 'Spring Festival only: a pot of bright tulips.' },
+  },
+  {
+    id: 'pagoda', water: 'fresh', rarity: 'legendary', level: 1, price: 0, exclusive: 'season', art: 'pagoda', w: 16, h: 22, beauty: 45, hide: true, sites: ['cave'], aura: 0.03,
+    name: { tr: 'Sakura Pagodası', en: 'Sakura Pagoda' }, desc: { tr: 'Bahar Şenliği ödülü. +%3 GP aurası.', en: 'Spring Festival reward. +3% XP aura.' },
+  },
+  {
+    id: 'sandcastle', water: 'both', rarity: 'rare', level: 1, price: 1100, season: 'summer', art: 'sandcastle', w: 16, h: 13, beauty: 16, hide: true,
+    name: { tr: 'Kumdan Kale', en: 'Sandcastle' }, desc: { tr: 'Yaz Festivali’ne özel: kulesinde bayrak dalgalanır.', en: 'Summer Festival only: a flag waves on top.' },
+  },
+  {
+    id: 'tiki', water: 'both', rarity: 'legendary', level: 1, price: 0, exclusive: 'season', art: 'tiki', w: 9, h: 18, beauty: 45, aura: 0.03, glow: '#fb923c',
+    name: { tr: 'Tiki Totemi', en: 'Tiki Totem' }, desc: { tr: 'Yaz Festivali ödülü. Meşaleleri geceleri parlar. +%3 GP aurası.', en: 'Summer Festival reward. Its torches glow at night. +3% XP aura.' },
+  },
+  {
+    id: 'pumpkin', water: 'both', rarity: 'rare', level: 1, price: 1000, season: 'halloween', art: 'pumpkin', w: 10, h: 8, beauty: 15, glow: '#fb923c',
+    name: { tr: 'Balkabağı Feneri', en: 'Jack-o’-Lantern' }, desc: { tr: 'Cadılar Festivali’ne özel: içinde mum titrer.', en: 'Spooky Festival only: a candle flickers inside.' },
+  },
+  {
+    id: 'cauldron', water: 'both', rarity: 'legendary', level: 1, price: 0, exclusive: 'season', art: 'cauldron', w: 12, h: 11, beauty: 45, o2: 5, aura: 0.03, glow: '#84cc16',
+    name: { tr: 'Cadı Kazanı', en: 'Witch’s Cauldron' }, desc: { tr: 'Cadılar Festivali ödülü. Fokurdayarak oksijen verir. +%3 GP aurası.', en: 'Spooky Festival reward. Bubbles add oxygen. +3% XP aura.' },
+  },
+  {
+    id: 'snowman', water: 'both', rarity: 'rare', level: 1, price: 1200, season: 'winter', art: 'snowman', w: 9, h: 15, beauty: 17,
+    name: { tr: 'Kardan Adam', en: 'Snowman' }, desc: { tr: 'Kış Festivali’ne özel: atkısı ve şapkasıyla.', en: 'Winter Festival only: with a scarf and top hat.' },
+  },
+  {
+    id: 'giftTree', water: 'both', rarity: 'legendary', level: 1, price: 0, exclusive: 'season', art: 'giftTree', w: 13, h: 22, beauty: 50, aura: 0.03, glow: '#fde047',
+    name: { tr: 'Yılbaşı Ağacı', en: 'Holiday Tree' }, desc: { tr: 'Kış Festivali ödülü. Işıkları yanıp söner. +%3 GP aurası.', en: 'Winter Festival reward. Its lights twinkle. +3% XP aura.' },
+  },
 ];
 
 export const DECOR_BY_ID: Record<string, DecorDef> = Object.fromEntries(DECOR.map((d) => [d.id, d]));

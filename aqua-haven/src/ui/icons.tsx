@@ -288,3 +288,21 @@ export const Moon = (p: P) => (
     <path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" fill="#c7d2fe" stroke="#4338ca" stroke-width="1.2" />
   </S>
 );
+
+export const Camera = (p: P) => (
+  <S {...p}>
+    <path d="M4 8.5A2.5 2.5 0 016.5 6h1.6l1.3-2h5.2l1.3 2h1.6A2.5 2.5 0 0120 8.5v8a2.5 2.5 0 01-2.5 2.5h-11A2.5 2.5 0 014 16.5z" fill="#94a3b8" stroke="#334155" stroke-width="1.2" />
+    <circle cx="12" cy="12.4" r="4" fill="#1e293b" stroke="#e2e8f0" stroke-width="1.4" />
+    <circle cx="10.8" cy="11.2" r="1.1" fill="#7dd3fc" />
+    <circle cx="17.2" cy="8.8" r="0.8" fill="#fde047" />
+  </S>
+);
+
+export const Trophy = (p: P) => (
+  <S {...p}>
+    <path d="M7 4h10v4.5a5 5 0 01-10 0z" fill="#fbbf24" stroke="#b45309" stroke-width="1.2" />
+    <path d="M7 5.5H4.5a3 3 0 003 3.6M17 5.5h2.5a3 3 0 01-3 3.6" fill="none" stroke="#b45309" stroke-width="1.3" />
+    <path d="M10.5 13.2h3l.6 3.3h-4.2z" fill="#f59e0b" />
+    <rect x="8" y="16.5" width="8" height="3" rx="1" fill="#92400e" />
+  </S>
+);

@@ -261,7 +261,15 @@ export type DecorArt =
   | 'palace'
   | 'liverock'
   | 'arch'
-  | 'anchor';
+  | 'anchor'
+  | 'flowerPot'
+  | 'pagoda'
+  | 'sandcastle'
+  | 'tiki'
+  | 'pumpkin'
+  | 'cauldron'
+  | 'snowman'
+  | 'giftTree';
 
 export interface DecorDef {
   id: string;
@@ -270,7 +278,8 @@ export interface DecorDef {
   level: number;
   price: number;
   pearls?: number;
-  exclusive?: 'vip';
+  exclusive?: 'vip' | 'season'; // season: yalnızca etkinlik ödülü olarak kazanılır
+  season?: string; // yalnızca bu etkinlik sürerken satılır
   art: DecorArt;
   w: number;
   h: number;
@@ -460,7 +469,8 @@ export type StatKey =
   | 'tipsCollected'
   | 'questsDone'
   | 'adsWatched'
-  | 'eggsOpened';
+  | 'eggsOpened'
+  | 'photos';
 
 export type QuestKind =
   | 'feed'
@@ -475,7 +485,8 @@ export type QuestKind =
   | 'collect'
   | 'breed'
   | 'trim'
-  | 'lucky';
+  | 'lucky'
+  | 'photo';
 
 export interface QuestState {
   id: string;
@@ -499,6 +510,17 @@ export interface DailyState {
   loginClaimed: boolean;
   lastLoginDay: string;
   vipClaimed: boolean;
+}
+
+/** Sezon etkinliği ilerlemesi (hedefler başlangıçtaki seviyeye göre sabitlenir) */
+export interface SeasonState {
+  key: string; // etkinlik kimliği + başlangıç yılı
+  id: string;
+  until: number;
+  targets: number[];
+  progress: number[];
+  claimed: boolean[];
+  done: boolean;
 }
 
 export interface Settings {
@@ -544,5 +566,6 @@ export interface GameState {
   tutorial: { step: number; done: boolean };
   flags: Record<string, number>;
   tipCapBonus: number;
+  season?: SeasonState;
   nextId: number;
 }

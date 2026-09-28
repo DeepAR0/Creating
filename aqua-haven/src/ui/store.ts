@@ -36,6 +36,8 @@ export const ui = {
   att: null as { resolve: () => void } | null,
   busy: false,
   foodOpen: false,
+  photo: false,
+  photoShot: null as string | null,
 };
 
 let game: Game;
@@ -70,6 +72,7 @@ export function setUI(patch: Partial<typeof ui>) {
     scene.tool = ui.tool;
     scene.selectedId = ui.selectedFish;
     scene.decorSel = ui.decorSel;
+    scene.photo = ui.photo;
   }
   refresh();
 }

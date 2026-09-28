@@ -1,2 +1,3 @@
 "NSUserTrackingUsageDescription" = "This identifier is used to show you more relevant ads that keep Aqua Haven free.";
 "CFBundleDisplayName" = "Aqua Haven";
+"NSPhotoLibraryAddUsageDescription" = "Lets you save photos of your aquarium to your library.";

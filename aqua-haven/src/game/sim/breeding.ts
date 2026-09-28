@@ -83,7 +83,8 @@ function rollVariant(sp: SpeciesDef, parents: FishState[]): { v?: string; mutate
   if (!vars.length) return { mutated: false };
   const parentVars = parents.map((p) => p.var).filter(Boolean) as string[];
   if (parentVars.length && chance(0.4)) return { v: parentVars[randInt(0, parentVars.length - 1)], mutated: false };
-  if (chance(sp.breed?.mutation ?? 0)) return { v: weightedPick(vars, (x) => x.w).id, mutated: true };
+  const natural = vars.filter((x) => x.w > 0); // etkinlik renkleri yalnızca ebeveynden geçer
+  if (natural.length && chance(sp.breed?.mutation ?? 0)) return { v: weightedPick(natural, (x) => x.w).id, mutated: true };
   return { mutated: false };
 }
 

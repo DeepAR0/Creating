@@ -4,6 +4,7 @@ import { levelScale, xpToNext } from '../balance';
 import type { GameState, QuestKind, QuestState } from '../types';
 import { dayDiff, dayKey, hashString, mulberry32, weightedPick } from '../util';
 import type { SimHost } from './host';
+import { ensureSeason, progressSeason, seasonClaimable } from './season';
 
 function questAllowed(s: GameState, kind: QuestKind): boolean {
   const lvl = s.player.level;
@@ -50,6 +51,7 @@ function pickHot(s: GameState, rng: () => number): string[] {
 /** Gün değiştiyse günlük görevleri, pazarı ve giriş serisini yeniler */
 export function ensureDaily(host: SimHost, now = Date.now()): boolean {
   const s = host.state;
+  ensureSeason(host, now);
   const today = dayKey(now);
   if (s.daily.day === today) return false;
   const rng = mulberry32(hashString(today) ^ s.seed);
@@ -80,6 +82,7 @@ export function ensureDaily(host: SimHost, now = Date.now()): boolean {
 }
 
 export function progressQuests(host: SimHost, kind: QuestKind, amount = 1) {
+  progressSeason(host, kind, amount);
   for (const q of host.state.daily.quests) {
     if (q.kind !== kind || q.claimed || q.progress >= q.target) continue;
     q.progress = Math.min(q.target, q.progress + amount);
@@ -158,7 +161,7 @@ export function claimableCount(s: GameState): number {
   if (!s.daily.bonusClaimed && s.daily.quests.length && s.daily.quests.every((q) => q.claimed)) n++;
   if (!s.daily.loginClaimed) n++;
   n += ACHIEVEMENTS.filter((a) => achievementStatus(s, a).claimable).length;
-  return n;
+  return n + seasonClaimable(s);
 }
 
 /** Yeni tamamlanan başarımlar için bir kez bildirim gönderir */
